@@ -1,0 +1,3 @@
+**[WH3] Giving an ancillary to a faction outside its `faction_set`?**
+
+I'm making a mod for trading magic items through diplomacy, moving them with `cm:force_remove_ancillary` + `cm:add_ancillary_to_faction`. If the receiver isn't in the item's `ancillaries_tables.faction_set` (e.g. a vampire-only item → Chaos Dwarfs), the item silently never arrives. `force_add_ancillary(char, key, true, false)` with force_equip doesn't bypass it either. Is there any script, context-command or CLI way around this, or is a DB change the only option (overriding `faction_set`, or duplicate "mirror" items with `faction_set = all`)? And is `faction_set` the only thing stopping a foreign race from equipping the item?

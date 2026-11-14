@@ -1,0 +1,31 @@
+key	text	tooltip
+#Loc;1;text/diplomacy_trade_magic_items.loc		
+diplomacy_strings_string_diplomatic_option_trade_magic_items	Торговля магическими предметами	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Обменивайтесь или покупайте магические предметы за деньги или другие предметы.	false
+trade_magic_items_deal_chance_tooltip	Мнение выбранной фракции о сделке. Если этот показатель имеет положительное значение, фракция согласится на сделку. Если же нет — потребуются дополнительные уговоры	false
+trade_magic_items_deal_chance_breakdown	Оценка:	false
+trade_magic_items_deal_chance_items_offered	Магические предметы, которые вы предлагаете:	false
+trade_magic_items_deal_chance_items_demanded	Магические предметы, которые вы требуете:	false
+trade_magic_items_offer_payment	Предл. плату	false
+trade_magic_items_demand_payment	Треб. плату	false
+trade_magic_items_deal_chance_total	Дипломатическое соглашение	false
+trade_magic_items_button_needs_peace	Опция не доступна, пока вы в состоянии войны с этой фракцией. Вначале заключите мир.	false
+trade_magic_items_deal_chance_rarity	Редкость	false
+trade_magic_items_deal_chance_equipped	Принадлежат их персонажам	false
+trade_magic_items_deal_chance_prospects	Перспективы дипломатии	false
+trade_magic_items_deal_chance_economic	Экономическая ценность	false
+trade_magic_items_their_treasury	Их Казна	false
+trade_magic_items_balance_tooltip	Уравнять предложение||Автоматически добавьте плату, чтобы сбалансировать предложение	false
+trade_magic_items_deal_chance_frequency	Частота сделок	false
+trade_magic_items_deal_chance_recent	Предмет недавно участвовал в торговле с этой фракцией	false
+trade_magic_items_deal_chance_this_turn	на этом ходу	false
+trade_magic_items_deal_chance_turn_ago	1 ход назад	false
+trade_magic_items_deal_chance_turns_ago	%d ходов назад	false
+trade_magic_items_deal_chance_deal_number	%d сделка	false
+trade_magic_items_propose_player_tooltip	Сделать предложение||Предложить вышеуказанную сделку другому игроку	false
+trade_magic_items_accept_tooltip	Принять||Принять предложенную сделку.	false
+trade_magic_items_decline_tooltip	Отказать||Отказать предложенной сделке.	false
+trade_magic_items_panel_title	Торговля Магическими Предметами	false
+trade_magic_items_rules_hint	Выберите магические предметы для торговли. Уникальные предметы, руны и предметы с привязками не подлежат торговле	false
+trade_magic_items_your_items	Ваши Магические Предметы	false
+trade_magic_items_their_items	Их Магические предметы	false

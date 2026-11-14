@@ -1,0 +1,17 @@
+# Extracted vanilla game files (CA property, ~2 GB) - reference only
+Vanilla_files/
+
+# Other authors' mods kept locally as reference
+Other modders examples/
+
+# Windows / tool junk
+*.lnk
+Thumbs.db
+desktop.ini
+*.rpfm_reserved.*
+*.claude
+
+Release materials/
+archive/
+
+backups/

@@ -1,0 +1,31 @@
+key	text	tooltip
+#Loc;1;text/diplomacy_trade_magic_items.loc		
+diplomacy_strings_string_diplomatic_option_trade_magic_items	Trade Magical Items	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Exchange or Buy Magical Items for money or other items.	false
+trade_magic_items_deal_chance_tooltip	The selected faction's opinion of the deal. If this value is positive, they will agree. Otherwise, they will need further convincing.	false
+trade_magic_items_deal_chance_breakdown	Evaluation breakdown:	false
+trade_magic_items_deal_chance_items_offered	Magic items you offer:	false
+trade_magic_items_deal_chance_items_demanded	Magic items you demand:	false
+trade_magic_items_offer_payment	Offer Payment	false
+trade_magic_items_demand_payment	Demand Payment	false
+trade_magic_items_deal_chance_total	Diplomatic treaty	false
+trade_magic_items_button_needs_peace	Not available while you are at war with this faction. Make peace first.	false
+trade_magic_items_deal_chance_rarity	Rarity	false
+trade_magic_items_deal_chance_equipped	Belongs to their characters	false
+trade_magic_items_deal_chance_prospects	Diplomatic prospects	false
+trade_magic_items_deal_chance_economic	Economic value	false
+trade_magic_items_their_treasury	Their Treasury	false
+trade_magic_items_balance_tooltip	Balance offer||Automatically add a payment to get a balanced deal.	false
+trade_magic_items_deal_chance_frequency	Deals frequency	false
+trade_magic_items_deal_chance_recent	Items recently traded with this faction	false
+trade_magic_items_deal_chance_this_turn	this turn	false
+trade_magic_items_deal_chance_turn_ago	1 turn ago	false
+trade_magic_items_deal_chance_turns_ago	%d turns ago	false
+trade_magic_items_deal_chance_deal_number	%d deal	false
+trade_magic_items_propose_player_tooltip	Propose offer||Propose the above deal to the other player.	false
+trade_magic_items_accept_tooltip	Accept||Accept the proposed deal.	false
+trade_magic_items_decline_tooltip	Decline||Decline the proposed deal.	false
+trade_magic_items_panel_title	Trade Magic Items	false
+trade_magic_items_rules_hint	Select magic items to offer or demand. Unique items, runes and items that are only equippable by certain characters are not tradable	false
+trade_magic_items_your_items	Your Magic Items	false
+trade_magic_items_their_items	Their Magic Items	false

@@ -26,6 +26,20 @@ trade_magic_items_propose_player_tooltip	Сделать предложение||
 trade_magic_items_accept_tooltip	Принять||Принять предложенную сделку.	false
 trade_magic_items_decline_tooltip	Отказать||Отказать предложенной сделке.	false
 trade_magic_items_panel_title	Торговля Магическими Предметами	false
-trade_magic_items_rules_hint	Выберите магические предметы для торговли. Уникальные предметы, руны и предметы с привязками не подлежат торговле	false
+trade_magic_items_rules_hint	Выберите, что предложить или потребовать. Правила — на вкладках.	false
 trade_magic_items_your_items	Ваши Магические Предметы	false
 trade_magic_items_their_items	Их Магические предметы	false
+trade_magic_items_tab_magic_items	Магические предметы	false
+trade_magic_items_tab_banners	Знамёна	false
+trade_magic_items_tab_followers	Спутники	false
+trade_magic_items_tab_magic_items_tooltip	Магическими предметами можно торговать с любой фракцией. Уникальные предметы и предметы, которые могут носить только именные персонажи, не продаются. Руны гномов и предметы для определённых типов персонажей можно передать только фракциям, которые могут их использовать, обычно той же расы.	false
+trade_magic_items_tab_banners_tooltip	Магические знамёна, руны знамён и инженерные руны. Кроме базовых знамён, которые может нести кто угодно, ими можно торговать только с фракциями, которые могут их использовать, обычно той же расы. Уникальные знамёна не продаются.	false
+trade_magic_items_tab_followers_tooltip	Спутниками можно торговать только с фракциями, которые могут их использовать, обычно той же расы. Уникальные спутники не продаются.	false
+trade_magic_items_tab_banners_other_race	Знамён для обмена нет. Кроме базовых знамён, которые может нести кто угодно, знамёнами можно торговать только с фракциями, которые могут их использовать, обычно той же расы.	false
+trade_magic_items_tab_banners_empty	Ни у одной стороны нет знамён для обмена.	false
+trade_magic_items_tab_followers_other_race	Спутниками можно торговать только с фракциями, которые могут их использовать, обычно той же расы.	false
+trade_magic_items_tab_followers_empty	Ни у одной стороны нет спутников для обмена.	false
+trade_magic_items_your_banners	Ваши Знамёна	false
+trade_magic_items_their_banners	Их Знамёна	false
+trade_magic_items_your_followers	Ваши Спутники	false
+trade_magic_items_their_followers	Их Спутники	false

@@ -53,8 +53,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const VANILLA = 'D:/Games/Modding/Diplomacy_Trade_Magic_Items_Mod/Vanilla_files';
-const PACK = 'D:/Games/Modding/Diplomacy_Trade_Magic_Items_Mod/Diplomacy_Trade_Magic_Items_packfile';
+// project root = two folders up from this script (Diplomacy_Trade_Magic_Items_docs/tools)
+const ROOT = path.resolve(__dirname, '..', '..');
+const VANILLA = path.join(ROOT, 'Vanilla_files');
+const PACK = path.join(ROOT, 'Diplomacy_Trade_Magic_Items_packfile');
 const SUFFIX = '_diplomacy_tradeable';
 const FILE = 'diplomacy_tradeable_magic_items_mirror';
 const LUA_TABLE = 'diplomacy_tradeable_magic_items_mirror';

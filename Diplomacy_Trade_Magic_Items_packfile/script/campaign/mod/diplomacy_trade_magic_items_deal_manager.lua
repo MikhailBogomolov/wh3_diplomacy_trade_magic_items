@@ -9,7 +9,7 @@
 trade_magic_items = trade_magic_items or {}
 
 
-local AD_VERSION = "1.0.1"
+local AD_VERSION = "1.1.0"
 
 
 ------------------------------------------------------------
@@ -43,6 +43,25 @@ local AD_BELONGS_TO_CHARACTER_POINTS = {
     wh_main_anc_group_uncommon = 10,
     wh_main_anc_group_rare = 15,
     wh_main_anc_group_crafted = 20
+}
+
+-- 1.1.0: the same two tables for ancillaries, the Banners and Followers
+-- tabs (banners, banner runes, engineering runes, followers); everything
+-- on the Magic Items tab (dwarf character runes and character-type items
+-- too) uses the tables above. Numbers by the user (2026-11-15). No
+-- tradeable ancillary is crafted: that row only copies rare.
+local AD_ANCILLARY_RARITY_POINTS = {
+    wh_main_anc_group_common = 2,
+    wh_main_anc_group_uncommon = 4,
+    wh_main_anc_group_rare = 8,
+    wh_main_anc_group_crafted = 8
+}
+
+local AD_ANCILLARY_BELONGS_TO_CHARACTER_POINTS = {
+    wh_main_anc_group_common = 0.5,
+    wh_main_anc_group_uncommon = 1,
+    wh_main_anc_group_rare = 1.5,
+    wh_main_anc_group_crafted = 1.5
 }
 
 -- gold in the deal: this much gold is one point (40000 gold = 40),
@@ -250,8 +269,15 @@ local function ad_their_gold_multiplier(attitude)
 end
 
 
+-- an item of the Banners or Followers tab (its row's list, see the screen)
+local function ad_is_ancillary(info)
+    return info.tab == "banners" or info.tab == "followers"
+end
+
+
 local function ad_rarity_points(info)
-    local points = AD_RARITY_POINTS[info.rarity]
+    local table_of_points = ad_is_ancillary(info) and AD_ANCILLARY_RARITY_POINTS or AD_RARITY_POINTS
+    local points = table_of_points[info.rarity]
 
     if not points then
         trade_magic_items.log("WARNING: no rarity points for " .. tostring(info.key) .. " (rarity " .. tostring(info.rarity) .. ")")
@@ -259,6 +285,13 @@ local function ad_rarity_points(info)
     end
 
     return points
+end
+
+
+local function ad_belongs_points(info)
+    local table_of_points = ad_is_ancillary(info) and AD_ANCILLARY_BELONGS_TO_CHARACTER_POINTS or AD_BELONGS_TO_CHARACTER_POINTS
+
+    return table_of_points[info.rarity] or 0
 end
 
 
@@ -328,7 +361,7 @@ function trade_magic_items.evaluate_deal()
             end
 
             if info.holder_cqi then
-                evaluation.demanded_equipped = evaluation.demanded_equipped - (AD_BELONGS_TO_CHARACTER_POINTS[info.rarity] or 0)
+                evaluation.demanded_equipped = evaluation.demanded_equipped - ad_belongs_points(info)
             end
         end
     end

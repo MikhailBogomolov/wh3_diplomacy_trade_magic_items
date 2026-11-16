@@ -94,9 +94,25 @@ end
 -- Both are set here with SetContextObject. The XML must NOT use
 -- ContextInitPlayerFaction: the copied right list would fill itself
 -- with the player's items a frame later and keep them as empty rows.
+--
+-- 1.1.0: three lists per column, one per tab, each with its own filter
+-- (tools/build_tabs.js). All stay bound, only the current tab's list is
+-- visible. The banners / followers filters (and part of the magic items
+-- one) check that both sides can use the item: the partner's key goes
+-- to the layout as the script object below, before the lists are bound.
 ------------------------------------------------------------
 
-local AD_ITEM_LIST_ID = "magic_items_list"
+-- tab -> list id, in tab order
+trade_magic_items.TABS = { "magic", "banners", "followers" }
+
+local AD_ITEM_LIST_IDS = {
+    magic = "magic_items_list",
+    banners = "banners_list",
+    followers = "followers_list"
+}
+
+-- read by the list filters (ScriptObjectContext)
+local AD_PARTNER_CONTEXT = "trade_magic_items_partner"
 
 
 -- the partner of a deal that came from another player, while its window
@@ -124,30 +140,146 @@ function trade_magic_items.get_target_faction()
 end
 
 
-local function ad_get_item_list(panel, column_id)
+local function ad_get_item_list(panel, column_id, tab)
     local column = find_uicomponent(panel, column_id)
 
     if not column then
         return nil
     end
 
-    return find_uicomponent(column, AD_ITEM_LIST_ID)
+    return find_uicomponent(column, AD_ITEM_LIST_IDS[tab])
+end
+
+
+-- { { tab =, list = }, ... } of a column, in tab order
+local function ad_get_item_lists(panel, column_id)
+    local lists = {}
+
+    for _, tab in ipairs(trade_magic_items.TABS) do
+        local list = ad_get_item_list(panel, column_id, tab)
+
+        if list then
+            table.insert(lists, { tab = tab, list = list })
+        end
+    end
+
+    return lists
 end
 
 
 local function ad_bind_item_list(panel, column_id, faction)
-    local list = ad_get_item_list(panel, column_id)
-
-    if not list then
-        trade_magic_items.log("ERROR: " .. column_id .. " item list not found")
-        return
-    end
-
     local cqi = tostring(faction:command_queue_index())
 
-    list:SetContextObject(cco("CcoCampaignFaction", cqi))
+    for _, tab in ipairs(trade_magic_items.TABS) do
+        local list = ad_get_item_list(panel, column_id, tab)
 
-    trade_magic_items.log("Item list bound: " .. column_id .. " -> " .. faction:name() .. " (cqi " .. cqi .. ")")
+        if list then
+            list:SetContextObject(cco("CcoCampaignFaction", cqi))
+        else
+            trade_magic_items.log("ERROR: " .. column_id .. " " .. AD_ITEM_LIST_IDS[tab] .. " not found")
+        end
+    end
+
+    trade_magic_items.log("Item lists bound: " .. column_id .. " -> " .. faction:name() .. " (cqi " .. cqi .. ")")
+end
+
+
+-- The Banners / Followers filters again, for the tab buttons: whether a
+-- tab has anything must be known when the window opens, before the lists
+-- fill a few frames later (user, test 1: the Banners tab flashed grey on
+-- open). KEEP IN SYNC with FILTERS in tools/build_tabs.js. Once the rows
+-- are read the tabs go by the rows, so a mismatch shows in the log.
+local AD_FILTER_BASE = "AncillaryRecordContext.Transferrable == true"
+    .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique\""
+    .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique_fusable\""
+    .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh2_dlc17_anc_group_rune\""
+    .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_scrap\""
+    .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_scrap_upgraded\""
+
+local AD_FILTER_SAME_RACE = "AncillaryRecordContext.CanFactionUseAncillary(PlayersFaction.FactionRecordContext)"
+    .. " && AncillaryRecordContext.CanFactionUseAncillary(FactionContextFromKey(ScriptObjectContext(\"" .. AD_PARTNER_CONTEXT .. "\").StringValue).FactionRecordContext)"
+
+local AD_TAB_FILTERS = {
+    banners = "AncillaryRecordContext.CategoryContext.Category == \"general\""
+        .. " && (AncillaryRecordContext.SubcategoryContext.Subcategory == \"banner\""
+        .. " || AncillaryRecordContext.SubcategoryContext.Subcategory == \"banner_rune\""
+        .. " || AncillaryRecordContext.SubcategoryContext.Subcategory == \"engineering_rune\")"
+        .. " && " .. AD_FILTER_BASE
+        .. " && " .. AD_FILTER_SAME_RACE
+        .. " && AncillaryRecordContext.Key != \"wh3_dlc29_anc_standard_hef_shadow_banner\"",
+    followers = "AncillaryRecordContext.CategoryContext.Category == \"general\""
+        .. " && AncillaryRecordContext.SubcategoryContext.Subcategory == \"follower\""
+        .. " && " .. AD_FILTER_BASE
+        .. " && " .. AD_FILTER_SAME_RACE
+        .. " && AncillaryRecordContext.Key != \"wh2_dlc17_bst_anc_follower_battle_scarred_ungor_raider\""
+        .. " && AncillaryRecordContext.Key != \"wh2_main_anc_follower_lzd_librarian\""
+}
+
+-- items of the tab on both sides, counted on binding: tab -> count
+local ad_tab_counts = {}
+
+
+-- needs the partner script object set
+local function ad_count_tab_items(player, target)
+    ad_tab_counts = {}
+
+    for tab, filter in pairs(AD_TAB_FILTERS) do
+        local count = 0
+
+        for _, faction in ipairs({ player, target }) do
+            local size = trade_magic_items.get_context("CcoCampaignFaction", tostring(faction:command_queue_index()), "AncillaryList.Filter(" .. filter .. ").Size")
+
+            count = count + (type(size) == "number" and size or 0)
+        end
+
+        ad_tab_counts[tab] = count
+    end
+
+    trade_magic_items.log("Tab items on binding: banners " .. tostring(ad_tab_counts.banners) .. ", followers " .. tostring(ad_tab_counts.followers))
+end
+
+
+-- TEMP 1.1.0 (test 1: AI partners seemed to have few banners and
+-- followers): how many of the faction's banners / followers are left after
+-- each step of the tab filters, and which keys each step drops
+local AD_DIAG_STEPS = {
+    { name = "transferable", test = "AncillaryRecordContext.Transferrable == true" },
+    { name = "not unique", test = "AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique\""
+        .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique_fusable\"" },
+    { name = "both can use", test = AD_FILTER_SAME_RACE }
+}
+
+local AD_DIAG_KINDS = {
+    { name = "followers", test = "AncillaryRecordContext.CategoryContext.Category == \"general\" && AncillaryRecordContext.SubcategoryContext.Subcategory == \"follower\"" },
+    { name = "banners", test = "AncillaryRecordContext.CategoryContext.Category == \"general\" && AncillaryRecordContext.SubcategoryContext.Subcategory == \"banner\"" }
+}
+
+local function ad_log_filter_steps(faction)
+    local cqi = tostring(faction:command_queue_index())
+
+    for _, kind in ipairs(AD_DIAG_KINDS) do
+        local passed = kind.test
+        local counts = { "all " .. tostring(trade_magic_items.get_context("CcoCampaignFaction", cqi, "AncillaryList.Filter(" .. passed .. ").Size")) }
+        local dropped = {}
+
+        for _, step in ipairs(AD_DIAG_STEPS) do
+            local keys = trade_magic_items.get_context("CcoCampaignFaction", cqi,
+                "AncillaryList.Filter(" .. passed .. " && (" .. step.test .. ") == false).JoinString(AncillaryRecordContext.Key, \" \")")
+
+            passed = passed .. " && " .. step.test
+            table.insert(counts, step.name .. " " .. tostring(trade_magic_items.get_context("CcoCampaignFaction", cqi, "AncillaryList.Filter(" .. passed .. ").Size")))
+
+            if type(keys) == "string" and keys ~= "" then
+                table.insert(dropped, step.name .. ": " .. keys)
+            end
+        end
+
+        trade_magic_items.log("Filter steps " .. faction:name() .. " " .. kind.name .. ": " .. table.concat(counts, ", "))
+
+        for _, line in ipairs(dropped) do
+            trade_magic_items.log("  dropped by " .. line)
+        end
+    end
 end
 
 
@@ -159,6 +291,35 @@ local function ad_bind_item_lists(panel)
     if not player or not target then
         trade_magic_items.log("ERROR: player or negotiation target faction not found")
         return
+    end
+
+    -- before binding: the filters read it when the lists fill
+    local set_ok, set_err = pcall(common.set_context_value, AD_PARTNER_CONTEXT, target:name())
+
+    if not set_ok then
+        trade_magic_items.log("ERROR: setting the partner for the filters failed: " .. tostring(set_err))
+    end
+
+    -- TEMP 1.1.0: is the race check of the filters alive?
+    trade_magic_items.log("Filter check: partner context = "
+        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "ScriptObjectContext(\"" .. AD_PARTNER_CONTEXT .. "\").StringValue"))
+        .. ", partner record = "
+        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "FactionContextFromKey(ScriptObjectContext(\"" .. AD_PARTNER_CONTEXT .. "\").StringValue).FactionRecordContext.Key"))
+        .. ", player record = "
+        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "PlayersFaction.FactionRecordContext.Key")))
+
+    for _, faction in ipairs({ player, target }) do
+        local steps_ok, steps_err = pcall(ad_log_filter_steps, faction)
+
+        if not steps_ok then
+            trade_magic_items.log("ERROR: filter steps log failed: " .. tostring(steps_err))
+        end
+    end
+
+    local count_ok, count_err = pcall(ad_count_tab_items, player, target)
+
+    if not count_ok then
+        trade_magic_items.log("ERROR: counting the tab items failed: " .. tostring(count_err))
     end
 
     ad_bind_item_list(panel, "list_offers", player)
@@ -295,23 +456,20 @@ local function ad_show_holder_portrait(row, character)
 end
 
 
--- what each visible row stands for, rebuilt on every open:
+-- what each row stands for, rebuilt on every open:
 -- ad_row_info[column_id][item_id] = { key = <ancillary key>, holder_cqi = <cqi or nil if pooled>,
---     name = <localised>, rarity = <uniqueness group key> }
+--     name = <localised>, rarity = <uniqueness group key>, tab = <tab of its list> }
 local ad_row_info = { list_offers = {}, list_demands = {} }
 
+-- false from opening until the rows are read: the tabs go by the counts
+-- made on binding until then (see TABS)
+local ad_rows_read = false
 
-local function ad_mark_item_holders(panel, column_id, faction)
-    ad_row_info[column_id] = {}
 
-    local list = ad_get_item_list(panel, column_id)
-
-    if not list then
-        return
-    end
-
-    -- item key -> rows of that key, in list order
-    local rows_by_key = {}
+-- adds the item rows of one list to rows_by_key (item key -> rows of
+-- that key, in list order); returns how many there were
+local function ad_read_list_rows(list, tab, rows_by_key)
+    local count = 0
 
     for i = 0, list:ChildCount() - 1 do
         local row = UIComponent(list:Find(i))
@@ -345,11 +503,32 @@ local function ad_mark_item_holders(panel, column_id, faction)
                     item_id = row:GetContextObjectId("CcoCampaignAncillary"),
                     exact_cqi = exact_ok and type(exact_cqi) == "number" and exact_cqi or nil,
                     name = name_ok and type(name) == "string" and name or nil,
-                    rarity = rarity_ok and type(rarity) == "string" and rarity or nil
+                    rarity = rarity_ok and type(rarity) == "string" and rarity or nil,
+                    tab = tab
                 })
+                count = count + 1
             end
         end
     end
+
+    return count
+end
+
+
+local function ad_mark_item_holders(panel, column_id, faction)
+    ad_row_info[column_id] = {}
+
+    -- one item is in one tab only, so the holders of a key are handed
+    -- out within one list
+    local rows_by_key = {}
+    local per_tab = {}
+
+    for _, entry in ipairs(ad_get_item_lists(panel, column_id)) do
+        per_tab[entry.tab] = ad_read_list_rows(entry.list, entry.tab, rows_by_key)
+    end
+
+    trade_magic_items.log(column_id .. ": rows magic=" .. tostring(per_tab.magic) .. ", banners=" .. tostring(per_tab.banners)
+        .. ", followers=" .. tostring(per_tab.followers))
 
     local native, marked, pooled = 0, 0, 0
 
@@ -385,11 +564,12 @@ local function ad_mark_item_holders(panel, column_id, faction)
                 end
             end
 
-            ad_row_info[column_id][entry.item_id] = { key = key, holder_cqi = holder_cqi, name = entry.name, rarity = entry.rarity }
+            ad_row_info[column_id][entry.item_id] = { key = key, holder_cqi = holder_cqi, name = entry.name, rarity = entry.rarity, tab = entry.tab }
         end
     end
 
     trade_magic_items.log(column_id .. ": holders native=" .. native .. ", own portrait=" .. marked .. ", in pool=" .. pooled)
+    ad_rows_read = true
 end
 
 
@@ -401,13 +581,7 @@ end
 -- an item.
 ------------------------------------------------------------
 
-local function ad_lock_item_rows(panel, column_id)
-    local list = ad_get_item_list(panel, column_id)
-
-    if not list then
-        return
-    end
-
+local function ad_lock_list_rows(list)
     local locked = 0
 
     for i = 0, list:ChildCount() - 1 do
@@ -423,6 +597,17 @@ local function ad_lock_item_rows(panel, column_id)
                 locked = locked + 1
             end
         end
+    end
+
+    return locked
+end
+
+
+local function ad_lock_item_rows(panel, column_id)
+    local locked = 0
+
+    for _, entry in ipairs(ad_get_item_lists(panel, column_id)) do
+        locked = locked + ad_lock_list_rows(entry.list)
     end
 
     trade_magic_items.log(column_id .. ": locked " .. locked .. " item entries")
@@ -496,7 +681,7 @@ local function ad_copy_selection(selection)
 
     for _, column_id in ipairs(trade_magic_items.COLUMNS) do
         for item_id, info in pairs(selection[column_id]) do
-            copy[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity }
+            copy[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity, tab = info.tab }
         end
     end
 
@@ -599,10 +784,11 @@ local function ad_restore_ticks(panel)
     end
 
     for _, column_id in ipairs(trade_magic_items.COLUMNS) do
-        local list = ad_get_item_list(panel, column_id)
         local listed = {}
 
-        if list then
+        for _, entry in ipairs(ad_get_item_lists(panel, column_id)) do
+            local list = entry.list
+
             for i = 0, list:ChildCount() - 1 do
                 local row = UIComponent(list:Find(i))
                 local item_id = row:GetContextObjectId("CcoCampaignAncillary")
@@ -634,6 +820,16 @@ local function ad_restore_ticks(panel)
                 trade_magic_items.working[column_id][item_id] = nil
                 trade_magic_items.log("Selected item no longer listed, dropped: " .. column_id .. " " .. item_id)
             end
+        end
+    end
+
+    -- the ticks changed (also a human partner's proposal shown, see HUMAN
+    -- PARTNER): the counters on the tabs and column titles follow
+    if trade_magic_items.update_tabs then
+        local tabs_ok, tabs_err = pcall(trade_magic_items.update_tabs, panel)
+
+        if not tabs_ok then
+            trade_magic_items.log("ERROR: updating the tabs failed: " .. tostring(tabs_err))
         end
     end
 end
@@ -740,8 +936,17 @@ local function ad_layout_panel(panel)
 
         if column then
             ad_set_height(column, base.column + extra)
-            ad_set_height(find_uicomponent(column, "list_clip"), base.clip + extra)
-            ad_set_height(find_uicomponent(column, "vslider"), base.clip + extra - AD_VSLIDER_SHORTER_BY)
+
+            -- 1.1.0: one list view per tab, each as tall as the column
+            for i = 0, column:ChildCount() - 1 do
+                local view = UIComponent(column:Find(i))
+
+                if string.sub(view:Id(), 1, 5) == "view_" then
+                    ad_set_height(view, base.column + extra)
+                    ad_set_height(find_uicomponent(view, "list_clip"), base.clip + extra)
+                    ad_set_height(find_uicomponent(view, "vslider"), base.clip + extra - AD_VSLIDER_SHORTER_BY)
+                end
+            end
         end
     end
 
@@ -774,6 +979,341 @@ local function ad_restore_panel_height(panel)
     ad_layout_panel(panel)
 end
 
+
+------------------------------------------------------------
+-- TABS (1.1.0)
+-- Magic Items / Banners / Followers over the columns. One deal: a tab
+-- only chooses which list of each column is visible, so it is UI only
+-- (nothing for multiplayer). Rules (user, 2026-11-15):
+--   every open starts on Magic Items, leaving the window drops the ticks
+--   (as before: Cancel throws the working selection away);
+--   ticks stay when switching tabs, a tab shows how many of its items
+--   are ticked, on both sides together;
+--   Banners / Followers are greyed when neither side has anything there
+--   to trade, with a tooltip why. Magic Items is never greyed.
+-- The buttons are in the layout (tools/build_tabs.js); the script sets
+-- their states, a click toggles a button by itself first.
+------------------------------------------------------------
+
+local AD_TAB_BUTTON_IDS = {
+    magic = "tab_magic_items",
+    banners = "tab_banners",
+    followers = "tab_followers"
+}
+
+local AD_TAB_BY_BUTTON = {
+    tab_magic_items = "magic",
+    tab_banners = "banners",
+    tab_followers = "followers"
+}
+
+local AD_TAB_NAME_KEYS = {
+    magic = "trade_magic_items_tab_magic_items",
+    banners = "trade_magic_items_tab_banners",
+    followers = "trade_magic_items_tab_followers"
+}
+
+local AD_TAB_TOOLTIP_KEYS = {
+    magic = "trade_magic_items_tab_magic_items_tooltip",
+    banners = "trade_magic_items_tab_banners_tooltip",
+    followers = "trade_magic_items_tab_followers_tooltip"
+}
+
+-- greyed tab: the partner is of another race / nobody has anything there
+local AD_TAB_OTHER_RACE_KEYS = {
+    banners = "trade_magic_items_tab_banners_other_race",
+    followers = "trade_magic_items_tab_followers_other_race"
+}
+
+local AD_TAB_EMPTY_KEYS = {
+    banners = "trade_magic_items_tab_banners_empty",
+    followers = "trade_magic_items_tab_followers_empty"
+}
+
+local AD_COLUMN_TITLE_KEYS = {
+    magic = { list_offers = "trade_magic_items_your_items", list_demands = "trade_magic_items_their_items" },
+    banners = { list_offers = "trade_magic_items_your_banners", list_demands = "trade_magic_items_their_banners" },
+    followers = { list_offers = "trade_magic_items_your_followers", list_demands = "trade_magic_items_their_followers" }
+}
+
+trade_magic_items.current_tab = "magic"
+
+
+-- rows of the tab in both columns (ad_row_info, as read on open)
+local function ad_tab_rows(tab)
+    local count = 0
+
+    for _, column_id in ipairs(trade_magic_items.COLUMNS) do
+        for _, info in pairs(ad_row_info[column_id]) do
+            if info.tab == tab then
+                count = count + 1
+            end
+        end
+    end
+
+    return count
+end
+
+
+-- ticked items of the tab in both columns
+local function ad_tab_ticked(tab)
+    local count = 0
+
+    if trade_magic_items.working then
+        for _, column_id in ipairs(trade_magic_items.COLUMNS) do
+            for _, info in pairs(trade_magic_items.working[column_id]) do
+                if info.tab == tab then
+                    count = count + 1
+                end
+            end
+        end
+    end
+
+    return count
+end
+
+
+-- by the rows once they are read, by the counts made on binding before
+-- (the lists fill a few frames after the window opens)
+local function ad_tab_available(tab)
+    if tab == "magic" then
+        return true
+    end
+
+    if ad_rows_read then
+        return ad_tab_rows(tab) > 0
+    end
+
+    return (ad_tab_counts[tab] or 0) > 0
+end
+
+
+-- TEMP 1.1.0: the counts on binding must match the rows
+local function ad_log_tab_counts_vs_rows()
+    for tab in pairs(AD_TAB_FILTERS) do
+        local rows = ad_tab_rows(tab)
+
+        if rows ~= (ad_tab_counts[tab] or 0) then
+            trade_magic_items.log("WARNING: tab " .. tab .. ": " .. tostring(ad_tab_counts[tab]) .. " counted on binding, " .. rows .. " rows")
+        end
+    end
+end
+
+
+local function ad_localised(key)
+    local text = common.get_localised_string(key)
+
+    if text == "" then
+        trade_magic_items.log("WARNING: localisation lookup failed for " .. key)
+        return key
+    end
+
+    return text
+end
+
+
+-- the tooltip of a greyed tab: another race, or simply nothing there
+local function ad_greyed_tab_tooltip(tab)
+    local player = cm:get_faction(cm:get_local_faction_name(true))
+    local partner = trade_magic_items.get_target_faction()
+
+    if player and partner and player:culture() ~= partner:culture() then
+        return AD_TAB_OTHER_RACE_KEYS[tab]
+    end
+
+    return AD_TAB_EMPTY_KEYS[tab]
+end
+
+
+-- ticked items of the tab in one column
+local function ad_column_ticked(column_id, tab)
+    local count = 0
+
+    if trade_magic_items.working then
+        for _, info in pairs(trade_magic_items.working[column_id]) do
+            if info.tab == tab then
+                count = count + 1
+            end
+        end
+    end
+
+    return count
+end
+
+
+-- column titles of the current tab with the column's tick counter
+-- (user, test 2), e.g. "Your Banners (2)"
+local function ad_update_column_titles(panel)
+    local tab = trade_magic_items.current_tab
+
+    for _, column_id in ipairs(trade_magic_items.COLUMNS) do
+        local title = find_uicomponent(panel, column_id, "offers_title")
+        local key = AD_COLUMN_TITLE_KEYS[tab][column_id]
+
+        if title then
+            local text = ad_localised(key)
+            local ticked = ad_column_ticked(column_id, tab)
+
+            if ticked > 0 then
+                text = text .. " (" .. ticked .. ")"
+            end
+
+            title:SetStateText(text, key)
+        end
+    end
+end
+
+
+-- states, texts with the tick counter and tooltips of the tab buttons,
+-- and the column titles. Runs on every change of the deal (also a human
+-- partner's proposal or counteroffer coming in), so the counters follow.
+local function ad_update_tabs(panel)
+    -- a tab left empty (its items traded away) can't stay open
+    if not ad_tab_available(trade_magic_items.current_tab) then
+        trade_magic_items.log("Tab " .. trade_magic_items.current_tab .. " has nothing left, back to magic")
+        trade_magic_items.show_tab(panel, "magic")
+        return
+    end
+
+    ad_update_column_titles(panel)
+
+    for _, tab in ipairs(trade_magic_items.TABS) do
+        local button = find_uicomponent(panel, AD_TAB_BUTTON_IDS[tab])
+
+        if button then
+            local available = ad_tab_available(tab)
+            local ticked = ad_tab_ticked(tab)
+            local text = ad_localised(AD_TAB_NAME_KEYS[tab])
+
+            if ticked > 0 then
+                text = text .. " (" .. ticked .. ")"
+            end
+
+            if not available then
+                button:SetState("inactive")
+            elseif tab == trade_magic_items.current_tab then
+                button:SetState("selected")
+            else
+                button:SetState("active")
+            end
+
+            local label = find_uicomponent(button, "button_txt")
+
+            if label then
+                label:SetStateText(text, AD_TAB_NAME_KEYS[tab])
+            end
+
+            local tooltip = available and AD_TAB_TOOLTIP_KEYS[tab] or ad_greyed_tab_tooltip(tab)
+
+            button:SetTooltipText(ad_localised(tooltip), tooltip, true)
+        else
+            trade_magic_items.log("ERROR: tab button not found: " .. AD_TAB_BUTTON_IDS[tab])
+        end
+    end
+end
+
+-- for code above this section (restoring the ticks)
+trade_magic_items.update_tabs = ad_update_tabs
+
+
+-- AD_VIEW_IDS: each tab has its own list view in a column (list_clip,
+-- list_box, list, slider), so each scrolls on its own and keeps its place
+-- while the window is open (user, test 2). Back to the top on every open
+-- (the sliders react to this UiMsg in the layout).
+local AD_VIEW_IDS = {
+    magic = "view_magic",
+    banners = "view_banners",
+    followers = "view_followers"
+}
+
+local AD_SCROLL_RESET_MSG = "UiMsg(\"trade_magic_items_scroll_reset\")"
+
+
+-- Esc while our window is open = Cancel (user, test 3), instead of
+-- closing the whole diplomacy screen. CA's key steal: persistent, and
+-- always released by name on leaving (a non-persistent steal leaves the
+-- key stolen after the first press, see lib_campaign_manager)
+local AD_ESC_KEY_NAME = "trade_magic_items_esc"
+local ad_esc_stolen = false
+
+local function ad_steal_esc_key()
+    if ad_esc_stolen then
+        return
+    end
+
+    local ok, err = pcall(function()
+        cm:steal_escape_key_with_callback(AD_ESC_KEY_NAME, function()
+            trade_magic_items.log("Esc pressed in our window")
+            trade_magic_items.cancel_window("esc")
+        end, true)
+    end)
+
+    if ok then
+        ad_esc_stolen = true
+    else
+        trade_magic_items.log("ERROR: taking the Esc key failed: " .. tostring(err))
+    end
+end
+
+
+local function ad_release_esc_key()
+    if not ad_esc_stolen then
+        return
+    end
+
+    ad_esc_stolen = false
+
+    local ok, err = pcall(function()
+        cm:release_escape_key_with_callback(AD_ESC_KEY_NAME)
+    end)
+
+    if not ok then
+        trade_magic_items.log("ERROR: releasing the Esc key failed: " .. tostring(err))
+    end
+end
+
+
+function trade_magic_items.reset_tab_scroll()
+    local ok, err = pcall(common.call_context_command, "CcoCampaignRoot", "", AD_SCROLL_RESET_MSG)
+
+    if not ok then
+        trade_magic_items.log("ERROR: scroll reset failed: " .. tostring(err))
+    end
+end
+
+
+-- shows the tab's list view in both columns
+function trade_magic_items.show_tab(panel, tab)
+    trade_magic_items.current_tab = tab
+
+    for _, column_id in ipairs(trade_magic_items.COLUMNS) do
+        for view_tab, view_id in pairs(AD_VIEW_IDS) do
+            local view = find_uicomponent(panel, column_id, view_id)
+
+            if view then
+                view:SetVisible(view_tab == tab)
+            else
+                trade_magic_items.log("ERROR: list view not found: " .. column_id .. " " .. view_id)
+            end
+        end
+    end
+
+    ad_update_tabs(panel)
+
+    -- TEMP 1.1.0: where the tabs ended up and how big the visible lists are
+    local tab_button = find_uicomponent(panel, AD_TAB_BUTTON_IDS[tab])
+    local list = ad_get_item_list(panel, "list_offers", tab)
+    local panel_x, panel_y = panel:Position()
+
+    if tab_button then
+        local x, y = tab_button:Position()
+
+        trade_magic_items.log("Tab " .. tab .. " shown: button at " .. (x - panel_x) .. "," .. (y - panel_y)
+            .. " size " .. tab_button:Width() .. "x" .. tab_button:Height()
+            .. ", panel " .. panel:Width() .. "x" .. panel:Height()
+            .. (list and (", left list " .. list:Height() .. " high, " .. list:ChildCount() .. " children") or ", left list not found"))
+    end
+end
 
 ------------------------------------------------------------
 -- DEAL CHANCE
@@ -939,6 +1479,13 @@ local ad_update_balance_button
 
 
 local function ad_refresh_deal_chance(panel)
+    -- the deal changed: the tick counters on the tabs too
+    local tabs_ok, tabs_err = pcall(ad_update_tabs, panel)
+
+    if not tabs_ok then
+        trade_magic_items.log("ERROR: updating the tabs failed: " .. tostring(tabs_err))
+    end
+
     if ad_human_deal then
         ad_show_partner_treasury(panel)
         ad_update_ok_button(panel)
@@ -1486,6 +2033,9 @@ end
 -- of the deal; the confirm button closes it
 local AD_DEAL_VIEW_IDS = {
     "offer_demand_parent",
+    "tab_magic_items",
+    "tab_banners",
+    "tab_followers",
     "label_trade_magic_items_rules",
     "ok_trade_magic_items",
     "cancel_trade_magic_items",
@@ -1634,6 +2184,7 @@ function trade_magic_items.open_trade_magic_items_panel()
     -- one, whose result view the layout shows
     ad_show_result_view(panel, false)
     panel:SetVisible(true)
+    ad_steal_esc_key()
 
     local height_ok, height_err = pcall(ad_restore_panel_height, panel)
 
@@ -1657,12 +2208,28 @@ function trade_magic_items.open_trade_magic_items_panel()
         trade_magic_items.log("ERROR: reading the gold failed: " .. tostring(gold_err))
     end
 
+    -- rows of the last open belong to the last partner: the tabs must not
+    -- count them until the new rows are read (below)
+    ad_row_info = { list_offers = {}, list_demands = {} }
+    ad_rows_read = false
+
     -- the target can change between negotiations, so bind on every open.
     -- pcall: the item lists are new; a failure must not break opening
     local ok, err = pcall(ad_bind_item_lists, panel)
 
     if not ok then
         trade_magic_items.log("ERROR: binding item lists failed: " .. tostring(err))
+    end
+
+    -- every open starts on Magic Items (user, 1.1.0). The lists were put
+    -- back to the top when the window was left (ad_reset_window_on_close);
+    -- this only makes sure of the tab, which is already the shown one
+    trade_magic_items.current_tab = "magic"
+
+    local tab_ok, tab_err = pcall(trade_magic_items.show_tab, panel, "magic")
+
+    if not tab_ok then
+        trade_magic_items.log("ERROR: showing the magic items tab failed: " .. tostring(tab_err))
     end
 
     -- working copy of the pending selection; a pending selection for
@@ -1706,6 +2273,8 @@ function trade_magic_items.open_trade_magic_items_panel()
                 end
             end
 
+            pcall(ad_log_tab_counts_vs_rows)
+
             local tick_ok, tick_err = pcall(ad_restore_ticks, panel)
 
             if not tick_ok then
@@ -1740,6 +2309,34 @@ function trade_magic_items.open_trade_magic_items_panel()
 end
 
 
+-- whatever way the window is left (our closes and diplomacy closing):
+-- no gold, no working selection (the pending one stays: a human deal),
+-- Magic Items tab, all lists at the top. Done on leaving, not on opening,
+-- so the next open shows nothing moving (user, test 3). Called while the
+-- panel is still visible, like the gold reset always was.
+local function ad_reset_window_on_close(panel)
+    ad_release_esc_key()
+    trade_magic_items.gold = nil
+    trade_magic_items.working = nil
+
+    local reset_ok, reset_err = pcall(common.call_context_command, "CcoCampaignRoot", "", "UiMsg(\"trade_magic_items_gold_reset\")")
+
+    if not reset_ok then
+        trade_magic_items.log("ERROR: gold reset failed: " .. tostring(reset_err))
+    end
+
+    trade_magic_items.reset_tab_scroll()
+
+    if panel then
+        local tab_ok, tab_err = pcall(trade_magic_items.show_tab, panel, "magic")
+
+        if not tab_ok then
+            trade_magic_items.log("ERROR: showing the magic items tab failed: " .. tostring(tab_err))
+        end
+    end
+end
+
+
 local function ad_close_trade_magic_items_panel()
     local diplomacy = trade_magic_items.get_diplomacy()
 
@@ -1748,20 +2345,12 @@ local function ad_close_trade_magic_items_panel()
         return
     end
 
-    -- leaving the window clears the amount, whatever way it was left
-    trade_magic_items.gold = nil
-
-    local reset_ok, reset_err = pcall(common.call_context_command, "CcoCampaignRoot", "", "UiMsg(\"trade_magic_items_gold_reset\")")
-
-    if not reset_ok then
-        trade_magic_items.log("ERROR: gold reset failed: " .. tostring(reset_err))
-    end
-
-
     local panel = find_uicomponent(
         diplomacy,
         AD_PANEL_ID
     )
+
+    ad_reset_window_on_close(panel)
 
     if panel then
         panel:SetVisible(false)
@@ -1789,6 +2378,7 @@ function trade_magic_items.hide_window_after_diplomacy()
     local panel = find_uicomponent(core:get_ui_root(), "diplomacy_dropdown", AD_PANEL_ID)
 
     if panel and panel:Visible() then
+        ad_reset_window_on_close(panel)
         panel:SetVisible(false)
         trade_magic_items.log("Diplomacy closed with our window open: window hidden")
 
@@ -2064,7 +2654,7 @@ function ad_fill_incoming(panel)
         if item_id then
             local info = ad_row_info[column_id][item_id]
 
-            selection[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity }
+            selection[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity, tab = info.tab }
         else
             trade_magic_items.log("WARNING: proposal item not found in " .. column_id .. ": " .. item.key .. " holder " .. tostring(item.holder))
         end
@@ -2397,6 +2987,31 @@ core:add_listener(
 -- MAGIC ITEMS PANEL CANCEL
 ------------------------------------------------------------
 
+-- the Cancel button and Esc (source: "button" / "esc")
+function trade_magic_items.cancel_window(source)
+    trade_magic_items.log("Trade magic items panel cancel: " .. tostring(source))
+
+    if ad_human_deal and ad_human_deal.state == "waiting" then
+        trade_magic_items.log("Cancel ignored: waiting for the other player")
+        return
+    end
+
+    if ad_human_deal and ad_human_deal.state ~= "compose" then
+        trade_magic_items.log("Human deal declined")
+        ad_send_answer("D")
+        ad_human_deal = nil
+        trade_magic_items.human_partner = nil
+    end
+
+    -- like vanilla: changes since opening are thrown away
+    trade_magic_items.working = nil
+    ad_log_selection("Pending selection kept", trade_magic_items.pending)
+
+    ad_close_trade_magic_items_panel()
+    ad_close_forced_diplomacy()
+end
+
+
 core:add_listener(
     "AD_TradeMagicItemsCancel",
     "ComponentLClickUp",
@@ -2406,28 +3021,7 @@ core:add_listener(
     end,
 
     function()
-
-        trade_magic_items.log("Trade magic items panel cancel clicked")
-
-        if ad_human_deal and ad_human_deal.state == "waiting" then
-            trade_magic_items.log("Cancel ignored: waiting for the other player")
-            return
-        end
-
-        if ad_human_deal and ad_human_deal.state ~= "compose" then
-            trade_magic_items.log("Human deal declined")
-            ad_send_answer("D")
-            ad_human_deal = nil
-            trade_magic_items.human_partner = nil
-        end
-
-        -- like vanilla: changes since opening are thrown away
-        trade_magic_items.working = nil
-        ad_log_selection("Pending selection kept", trade_magic_items.pending)
-
-        ad_close_trade_magic_items_panel()
-        ad_close_forced_diplomacy()
-
+        trade_magic_items.cancel_window("button")
     end,
 
     true
@@ -2746,7 +3340,7 @@ core:add_listener(
 
                 if selected then
                     local info = ad_row_info[column_id][item_id] or {}
-                    trade_magic_items.working[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity }
+                    trade_magic_items.working[column_id][item_id] = { key = info.key, holder_cqi = info.holder_cqi, name = info.name, rarity = info.rarity, tab = info.tab }
                 else
                     trade_magic_items.working[column_id][item_id] = nil
                 end
@@ -2768,6 +3362,58 @@ core:add_listener(
                 end
             end,
             100
+        )
+    end,
+
+    true
+)
+
+
+------------------------------------------------------------
+-- TAB BUTTONS
+-- UI only: shows the tab's lists, the deal stays as it is. A greyed tab
+-- ignores the click (its state may still have flipped: set back).
+------------------------------------------------------------
+
+core:add_listener(
+    "AD_TradeMagicItemsTab",
+    "ComponentLClickUp",
+
+    function(context)
+        return AD_TAB_BY_BUTTON[context.string] ~= nil
+    end,
+
+    function(context)
+        local button = UIComponent(context.component)
+        local tab = AD_TAB_BY_BUTTON[context.string]
+
+        if not ad_is_inside_panel(button) then
+            return
+        end
+
+        -- the button toggles its own state on the click; set ours after
+        cm:real_callback(
+            function()
+                local panel = trade_magic_items.panel_cache
+
+                if not panel then
+                    return
+                end
+
+                local ok, err = pcall(function()
+                    if ad_tab_available(tab) then
+                        trade_magic_items.show_tab(panel, tab)
+                    else
+                        trade_magic_items.log("Tab " .. tab .. " click ignored: nothing to trade there")
+                        ad_update_tabs(panel)
+                    end
+                end)
+
+                if not ok then
+                    trade_magic_items.log("ERROR: switching to tab " .. tab .. " failed: " .. tostring(err))
+                end
+            end,
+            50
         )
     end,
 

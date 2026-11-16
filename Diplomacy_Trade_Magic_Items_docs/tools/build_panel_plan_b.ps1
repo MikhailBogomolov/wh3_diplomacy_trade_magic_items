@@ -15,9 +15,11 @@
 
 $ErrorActionPreference = "Stop"
 
-$backupPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Diplomacy_Trade_Magic_Items_docs\backups\diplomacy_hud_trade_magic_items.before_plan_b.twui.xml"
-$donorPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\campaign ui\diplomacy_hud.twui.xml"
-$outPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\diplomacy_hud_trade_magic_items.twui.xml"
+# project root = two folders up from this script (Diplomacy_Trade_Magic_Items_docs\tools)
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$backupPath = Join-Path $root "backups\diplomacy_hud_trade_magic_items.before_plan_b.twui.xml"
+$donorPath = Join-Path $root "Vanilla_files\ui\campaign ui\diplomacy_hud.twui.xml"
+$outPath = Join-Path $root "Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\diplomacy_hud_trade_magic_items.twui.xml"
 
 # user (0.5.1 test): width as before (850 left black gaps); user (0.5.3):
 # default = smallest size = 4 visible items. A row is 50 + 10 spacing,
@@ -181,7 +183,7 @@ $text = $text.Replace($filterAnchor, $filterAnchor + ' &amp;&amp; AncillaryRecor
 # dy_treasury fills itself (ContextTextLabel PlayersFaction.TreasuryAmount),
 # treasury_icon is its icon, label_deal_success_chance (states negative /
 # positive, no callbacks) is filled by our Lua.
-$offersPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\campaign ui\diplomacy_hud_offers_panel.twui.xml"
+$offersPath = Join-Path $root "Vanilla_files\ui\campaign ui\diplomacy_hud_offers_panel.twui.xml"
 $offers = [System.IO.File]::ReadAllText($offersPath) -replace "`r`n", "`n"
 
 function Set-Placement([string]$block, [string]$docking, [string]$dockOffset, [string]$anchor) {
@@ -261,7 +263,7 @@ $waiting = Set-Placement (Copy-WithNewId (Get-Block $offers "label_waiting_on_re
 # component: only then the sizes below apply, templates ignore the
 # instance size (0.6.3 radios). 0.8.3 used button_ok: square, white glow.
 $balanceSize = 46
-$roundPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\templates\round_medium_button.twui.xml"
+$roundPath = Join-Path $root "Vanilla_files\ui\templates\round_medium_button.twui.xml"
 $round = [System.IO.File]::ReadAllText($roundPath) -replace "`r`n", "`n"
 $balance = Copy-WithNewId (Get-Block $round "round_medium_button") "round_medium_button" "trade_magic_items_balance_button"
 $balance = [regex]::Replace($balance, '\t\t\tuniqueguid_in_template="[^"]*"\n', '')
@@ -288,7 +290,7 @@ $balance = Set-Placement $balance "Bottom Center" "122.00,0.00" "0.00,1.00"
 # DiplomacyPaymentPanel callback is not copied. Squeezed onto the bronze
 # bar left of the buttons: the switch without its background, short
 # labels (texts set by Lua), a narrower amount field.
-$paymentsPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\campaign ui\diplomacy_hud_payments.twui.xml"
+$paymentsPath = Join-Path $root "Vanilla_files\ui\campaign ui\diplomacy_hud_payments.twui.xml"
 $payments = [System.IO.File]::ReadAllText($paymentsPath) -replace "`r`n", "`n"
 
 # blocks whose id differs from the tag, or whose tag is used twice

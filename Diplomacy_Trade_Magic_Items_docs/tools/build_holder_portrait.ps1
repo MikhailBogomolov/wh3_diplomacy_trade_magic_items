@@ -5,8 +5,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$templatePath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\templates\ancillary_entry.twui.xml"
-$outPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\ad_holder_portrait.twui.xml"
+# project root = two folders up from this script (Diplomacy_Trade_Magic_Items_docs\tools)
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$templatePath = Join-Path $root "Vanilla_files\ui\templates\ancillary_entry.twui.xml"
+$outPath = Join-Path $root "Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\ad_holder_portrait.twui.xml"
 
 $text = [System.IO.File]::ReadAllText($templatePath) -replace "`r`n", "`n"
 

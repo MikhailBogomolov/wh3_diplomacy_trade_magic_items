@@ -6,8 +6,10 @@
 
 $ErrorActionPreference = "Stop"
 
-$donorPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Vanilla_files\ui\campaign ui\character_details_panel_details.twui.xml"
-$panelPath = "D:\Games\Modding\Diplomacy_Trade_Magic_Items_Mod\Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\diplomacy_hud_trade_magic_items.twui.xml"
+# project root = two folders up from this script (Diplomacy_Trade_Magic_Items_docs\tools)
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$donorPath = Join-Path $root "Vanilla_files\ui\campaign ui\character_details_panel_details.twui.xml"
+$panelPath = Join-Path $root "Diplomacy_Trade_Magic_Items_packfile\ui\campaign ui\diplomacy_hud_trade_magic_items.twui.xml"
 $backupPath = Join-Path $PSScriptRoot "diplomacy_hud_trade_magic_items.before_item_list.twui.xml"
 
 $donor = [System.IO.File]::ReadAllText($donorPath) -replace "`r`n", "`n"

@@ -1,7 +1,7 @@
 key	text	tooltip
 #Loc;1;text/diplomacy_trade_magic_items.loc		
-diplomacy_strings_string_diplomatic_option_trade_magic_items	Trade Magical Items	false
-diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Exchange or Buy Magical Items for money or other items.	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items	Trade Magic Items & Ancillaries	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Exchange or buy magic items, banners and followers for currency or other items.	false
 trade_magic_items_deal_chance_tooltip	The selected faction's opinion of the deal. If this value is positive, they will agree. Otherwise, they will need further convincing.	false
 trade_magic_items_deal_chance_breakdown	Evaluation breakdown:	false
 trade_magic_items_deal_chance_items_offered	Magic items you offer:	false
@@ -25,7 +25,21 @@ trade_magic_items_deal_chance_deal_number	%d deal	false
 trade_magic_items_propose_player_tooltip	Propose offer||Propose the above deal to the other player.	false
 trade_magic_items_accept_tooltip	Accept||Accept the proposed deal.	false
 trade_magic_items_decline_tooltip	Decline||Decline the proposed deal.	false
-trade_magic_items_panel_title	Trade Magic Items	false
-trade_magic_items_rules_hint	Select magic items to offer or demand. Unique items, runes and items that are only equippable by certain characters are not tradable	false
+trade_magic_items_panel_title	Trade Magic Items & Ancillaries	false
+trade_magic_items_rules_hint	Choose what to offer or demand. Hover over tabs for trade rules.	false
 trade_magic_items_your_items	Your Magic Items	false
 trade_magic_items_their_items	Their Magic Items	false
+trade_magic_items_tab_magic_items	Magic Items	false
+trade_magic_items_tab_banners	Banners	false
+trade_magic_items_tab_followers	Followers	false
+trade_magic_items_tab_magic_items_tooltip	Most magic items can be traded with any faction. Dwarf runes and items for certain character types are only tradeable within the same race. Unique items and items that only named characters can equip are not tradeable.	false
+trade_magic_items_tab_banners_tooltip	Magic banners and banner runes. Apart from the basic banners, banners can usually only be traded within the same or a similar race. Unique banners are not tradeable.	false
+trade_magic_items_tab_followers_tooltip	Followers can only be traded within the same or a similar race. Unique followers are not tradeable.	false
+trade_magic_items_tab_banners_other_race	No banners to trade. Apart from the basic banners, banners can usually only be traded within the same or a similar race.	false
+trade_magic_items_tab_banners_empty	Neither side has banners to trade.	false
+trade_magic_items_tab_followers_other_race	No followers to trade. Followers can only be traded within the same or a similar race.	false
+trade_magic_items_tab_followers_empty	Neither side has followers to trade.	false
+trade_magic_items_your_banners	Your Banners	false
+trade_magic_items_their_banners	Their Banners	false
+trade_magic_items_your_followers	Your Followers	false
+trade_magic_items_their_followers	Their Followers	false

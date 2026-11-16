@@ -19,7 +19,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = 'D:/Games/Modding/Diplomacy_Trade_Magic_Items_Mod';
+// project root = two folders up from this script (Diplomacy_Trade_Magic_Items_docs/tools)
+const ROOT = path.resolve(__dirname, '..', '..');
 const SOURCE = path.join(ROOT, 'Diplomacy_Trade_Magic_Items_packfile/text/diplomacy_tradeable_magic_items_mirror.loc.tsv');
 const RUSSIAN = path.join(ROOT, 'Vanilla_files/text/localisation__.loc.tsv');
 const TARGET = path.join(ROOT, 'Diplomacy_Trade_Magic_Items_ru_packfile/text/diplomacy_tradeable_magic_items_mirror.loc.tsv');

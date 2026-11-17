@@ -1,0 +1,43 @@
+key	text	tooltip
+#Loc;1;text/diplomacy_trade_magic_items_mct.loc		
+mct_diplomacy_trade_magic_items_title	Trade Magic Items & Ancillaries	false
+mct_diplomacy_trade_magic_items_author	Bazulgar	false
+mct_diplomacy_trade_magic_items_description	Trade magic items, banners and followers with other factions through diplomacy. Here you can tune how the AI values these deals: item prices, the effect of the partner’s attitude, the deal memory, and an optional rule to trade only with a trade agreement.	false
+mct_diplomacy_trade_magic_items_section_rules	Rules	false
+mct_diplomacy_trade_magic_items_section_prices	Prices	false
+mct_diplomacy_trade_magic_items_section_items	Magic item prices (points)	false
+mct_diplomacy_trade_magic_items_section_ancillaries	Banner and follower prices (points)	false
+mct_diplomacy_trade_magic_items_section_attitude_order	Attitude: Order factions (% of the price)	false
+mct_diplomacy_trade_magic_items_section_attitude_destruction	Attitude: Destruction factions (% of the price)	false
+mct_diplomacy_trade_magic_items_section_memory	Deal memory	false
+mct_diplomacy_trade_magic_items_trade_agreement_only_text	Trade only with a trade agreement	false
+mct_diplomacy_trade_magic_items_trade_agreement_only_tooltip	Magic items, banners and followers can only be traded with factions you have a trade agreement with. Off by default.	false
+mct_diplomacy_trade_magic_items_payment_per_point_text	Payment per point	false
+mct_diplomacy_trade_magic_items_payment_per_point_tooltip	How much gold one point of the deal evaluation is worth. Changes every price in gold. Default: 1000.	false
+mct_diplomacy_trade_magic_items_rarity_common	Common	false
+mct_diplomacy_trade_magic_items_rarity_uncommon	Uncommon	false
+mct_diplomacy_trade_magic_items_rarity_rare	Rare	false
+mct_diplomacy_trade_magic_items_rarity_crafted	Crafted	false
+mct_diplomacy_trade_magic_items_attitude_25	Attitude 25 or better	false
+mct_diplomacy_trade_magic_items_attitude_50	Attitude 50 or better	false
+mct_diplomacy_trade_magic_items_attitude_100	Attitude 100 or better	false
+mct_diplomacy_trade_magic_items_attitude_150	Attitude 150 or better	false
+mct_diplomacy_trade_magic_items_attitude_200	Attitude 200 or better	false
+mct_diplomacy_trade_magic_items_attitude_300	Attitude 300 or better	false
+mct_diplomacy_trade_magic_items_attitude_middle	Attitude between -25 and 25	false
+mct_diplomacy_trade_magic_items_attitude_minus_25	Attitude -25 or worse	false
+mct_diplomacy_trade_magic_items_attitude_minus_50	Attitude -50 or worse	false
+mct_diplomacy_trade_magic_items_attitude_minus_100	Attitude -100 or worse	false
+mct_diplomacy_trade_magic_items_attitude_minus_150	Attitude -150 or worse	false
+mct_diplomacy_trade_magic_items_attitude_minus_200	Attitude -200 or worse	false
+mct_diplomacy_trade_magic_items_attitude_minus_300	Attitude -300 or worse	false
+mct_diplomacy_trade_magic_items_worn_percent_text	Worn by their character, %	false
+mct_diplomacy_trade_magic_items_worn_percent_tooltip	A demanded item worn by one of their characters costs this percent of its price more. 0 turns it off. Default: 30.	false
+mct_diplomacy_trade_magic_items_frequency_first_text	Deals frequency penalty	false
+mct_diplomacy_trade_magic_items_frequency_first_tooltip	Points a faction asks extra after its first item deal with anyone; doubles with each further deal. 0 turns it off. Default: 5.	false
+mct_diplomacy_trade_magic_items_frequency_turns_text	Deals frequency resets after, turns	false
+mct_diplomacy_trade_magic_items_recent_percent_text	Recently traded, % of rarity	false
+mct_diplomacy_trade_magic_items_recent_percent_tooltip	Extra cost of an item that goes back the other way soon after a trade, in percent of its rarity points. 0 turns it off. Default: 50.	false
+mct_diplomacy_trade_magic_items_recent_turns_text	Recently traded fades over, turns	false
+mct_diplomacy_trade_magic_items_big_deal_rarity_text	Big deal threshold, rarity points	false
+mct_diplomacy_trade_magic_items_big_deal_rarity_tooltip	From this many rarity points of both sides together, a deal improves relations like a medium gift (+20 relations) instead of a small gift (+10). Default: 35.	false

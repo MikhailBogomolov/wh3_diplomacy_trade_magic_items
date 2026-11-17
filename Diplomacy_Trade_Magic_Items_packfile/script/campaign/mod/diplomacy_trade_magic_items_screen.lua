@@ -239,50 +239,6 @@ local function ad_count_tab_items(player, target)
 end
 
 
--- TEMP 1.1.0 (test 1: AI partners seemed to have few banners and
--- followers): how many of the faction's banners / followers are left after
--- each step of the tab filters, and which keys each step drops
-local AD_DIAG_STEPS = {
-    { name = "transferable", test = "AncillaryRecordContext.Transferrable == true" },
-    { name = "not unique", test = "AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique\""
-        .. " && AncillaryRecordContext.UniquenessRecordContext.Key != \"wh_main_anc_group_unique_fusable\"" },
-    { name = "both can use", test = AD_FILTER_SAME_RACE }
-}
-
-local AD_DIAG_KINDS = {
-    { name = "followers", test = "AncillaryRecordContext.CategoryContext.Category == \"general\" && AncillaryRecordContext.SubcategoryContext.Subcategory == \"follower\"" },
-    { name = "banners", test = "AncillaryRecordContext.CategoryContext.Category == \"general\" && AncillaryRecordContext.SubcategoryContext.Subcategory == \"banner\"" }
-}
-
-local function ad_log_filter_steps(faction)
-    local cqi = tostring(faction:command_queue_index())
-
-    for _, kind in ipairs(AD_DIAG_KINDS) do
-        local passed = kind.test
-        local counts = { "all " .. tostring(trade_magic_items.get_context("CcoCampaignFaction", cqi, "AncillaryList.Filter(" .. passed .. ").Size")) }
-        local dropped = {}
-
-        for _, step in ipairs(AD_DIAG_STEPS) do
-            local keys = trade_magic_items.get_context("CcoCampaignFaction", cqi,
-                "AncillaryList.Filter(" .. passed .. " && (" .. step.test .. ") == false).JoinString(AncillaryRecordContext.Key, \" \")")
-
-            passed = passed .. " && " .. step.test
-            table.insert(counts, step.name .. " " .. tostring(trade_magic_items.get_context("CcoCampaignFaction", cqi, "AncillaryList.Filter(" .. passed .. ").Size")))
-
-            if type(keys) == "string" and keys ~= "" then
-                table.insert(dropped, step.name .. ": " .. keys)
-            end
-        end
-
-        trade_magic_items.log("Filter steps " .. faction:name() .. " " .. kind.name .. ": " .. table.concat(counts, ", "))
-
-        for _, line in ipairs(dropped) do
-            trade_magic_items.log("  dropped by " .. line)
-        end
-    end
-end
-
-
 local function ad_bind_item_lists(panel)
     -- UI only: the local player's faction is correct here even in MP
     local player = cm:get_faction(cm:get_local_faction_name(true))
@@ -298,22 +254,6 @@ local function ad_bind_item_lists(panel)
 
     if not set_ok then
         trade_magic_items.log("ERROR: setting the partner for the filters failed: " .. tostring(set_err))
-    end
-
-    -- TEMP 1.1.0: is the race check of the filters alive?
-    trade_magic_items.log("Filter check: partner context = "
-        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "ScriptObjectContext(\"" .. AD_PARTNER_CONTEXT .. "\").StringValue"))
-        .. ", partner record = "
-        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "FactionContextFromKey(ScriptObjectContext(\"" .. AD_PARTNER_CONTEXT .. "\").StringValue).FactionRecordContext.Key"))
-        .. ", player record = "
-        .. tostring(trade_magic_items.get_context("CcoCampaignRoot", "", "PlayersFaction.FactionRecordContext.Key")))
-
-    for _, faction in ipairs({ player, target }) do
-        local steps_ok, steps_err = pcall(ad_log_filter_steps, faction)
-
-        if not steps_ok then
-            trade_magic_items.log("ERROR: filter steps log failed: " .. tostring(steps_err))
-        end
     end
 
     local count_ok, count_err = pcall(ad_count_tab_items, player, target)
@@ -1088,18 +1028,6 @@ local function ad_tab_available(tab)
 end
 
 
--- TEMP 1.1.0: the counts on binding must match the rows
-local function ad_log_tab_counts_vs_rows()
-    for tab in pairs(AD_TAB_FILTERS) do
-        local rows = ad_tab_rows(tab)
-
-        if rows ~= (ad_tab_counts[tab] or 0) then
-            trade_magic_items.log("WARNING: tab " .. tab .. ": " .. tostring(ad_tab_counts[tab]) .. " counted on binding, " .. rows .. " rows")
-        end
-    end
-end
-
-
 local function ad_localised(key)
     local text = common.get_localised_string(key)
 
@@ -1299,20 +1227,6 @@ function trade_magic_items.show_tab(panel, tab)
     end
 
     ad_update_tabs(panel)
-
-    -- TEMP 1.1.0: where the tabs ended up and how big the visible lists are
-    local tab_button = find_uicomponent(panel, AD_TAB_BUTTON_IDS[tab])
-    local list = ad_get_item_list(panel, "list_offers", tab)
-    local panel_x, panel_y = panel:Position()
-
-    if tab_button then
-        local x, y = tab_button:Position()
-
-        trade_magic_items.log("Tab " .. tab .. " shown: button at " .. (x - panel_x) .. "," .. (y - panel_y)
-            .. " size " .. tab_button:Width() .. "x" .. tab_button:Height()
-            .. ", panel " .. panel:Width() .. "x" .. panel:Height()
-            .. (list and (", left list " .. list:Height() .. " high, " .. list:ChildCount() .. " children") or ", left list not found"))
-    end
 end
 
 ------------------------------------------------------------
@@ -1323,8 +1237,9 @@ end
 -- payments one: sentence, "Diplomatic treaty: total", breakdown groups
 -- (positive green without a sign, negative red).
 -- The total is the sum of the breakdown lines (numbers and sums: deal manager):
---   diplomatic prospects   their attitude towards us, by tier; only
---                          when the deal takes at least one of their items
+--   diplomatic prospects   their attitude towards us: a percentage (Order /
+--                          Destruction scale) on the price of their items,
+--                          shown as "percent (points)"
 --   economic value         gold in the deal
 --   deals frequency        - for recent deals of theirs (deal manager)
 --   items offered: rarity  + per item, recently traded - per item we
@@ -1343,11 +1258,12 @@ local AD_DEAL_CHANCE_ID = "label_deal_success_chance"
 -- title directly, the others get a blank line before them:
 -- { title = loc key or nil, lines = { { loc key, value key, key of the
 -- "turns ago" value shown when the value is not 0, key of the deal
--- number shown with it }, ... } }
+-- number shown with it, key of a percentage shown before the value },
+-- ... } }
 local AD_DEAL_CHANCE_GROUPS = {
     {
         lines = {
-            { "trade_magic_items_deal_chance_prospects", "diplomatic_prospects" },
+            { "trade_magic_items_deal_chance_prospects", "diplomatic_prospects", nil, nil, "attitude_percent" },
             { "trade_magic_items_deal_chance_economic", "economic_value" },
             { "trade_magic_items_deal_chance_frequency", "deals_frequency", "deals_frequency_turns", "deals_frequency_number" }
         }
@@ -1388,6 +1304,33 @@ local function ad_format_score(value)
     end
 
     return "[[col:red]]" .. text .. "[[/col]]"
+end
+
+
+-- "-25%", "+70%", "-12.5%", "0%": one decimal only when not whole
+local function ad_format_percent(percent)
+    local text = percent == math.floor(percent) and string.format("%d", percent) or string.format("%.1f", percent)
+
+    if percent > 0 then
+        text = "+" .. text
+    end
+
+    return text .. "%"
+end
+
+
+-- the attitude line (1.1.0, user): "-25% (4.7)", green when their items
+-- get cheaper, red when dearer, plain at 0
+local function ad_format_percent_score(percent, value)
+    local text = ad_format_percent(percent) .. " (" .. ad_score_text(value) .. ")"
+
+    if percent < 0 then
+        return "[[col:green]]" .. text .. "[[/col]]"
+    elseif percent > 0 then
+        return "[[col:red]]" .. text .. "[[/col]]"
+    end
+
+    return text
 end
 
 
@@ -1454,7 +1397,13 @@ local function ad_show_deal_chance(panel, evaluation)
                 name = name .. " " .. ad_line_note(turns, line[4] and evaluation[line[4]])
             end
 
-            table.insert(lines, name .. ": " .. ad_format_score(value))
+            -- the percentage only when they give items: on a pure sale it
+            -- changes nothing, so a plain 0.0 like the other empty lines
+            if line[5] and (evaluation.their_price or 0) > 0 then
+                table.insert(lines, name .. ": " .. ad_format_percent_score(evaluation[line[5]] or 0, value))
+            else
+                table.insert(lines, name .. ": " .. ad_format_score(value))
+            end
         end
     end
 
@@ -1501,7 +1450,8 @@ local function ad_refresh_deal_chance(panel)
     ad_update_balance_button(panel, evaluation)
 
     trade_magic_items.log("Deal chance " .. evaluation.total .. ": attitude " .. tostring(evaluation.attitude)
-        .. " -> " .. evaluation.diplomatic_prospects .. ", their gold x" .. evaluation.their_gold_multiplier
+        .. " (" .. tostring(evaluation.attitude_scale) .. " " .. evaluation.attitude_percent .. "%)"
+        .. " -> " .. evaluation.diplomatic_prospects
         .. ", gold " .. evaluation.economic_value
         .. ", frequency " .. evaluation.deals_frequency
         .. ", offered " .. evaluation.offered_rarity .. " recent " .. evaluation.offered_recent
@@ -1578,12 +1528,12 @@ end
 local function ad_balance_target(evaluation)
     local points = evaluation.points_without_gold
     local direction = points < 0 and "give" or "demand"
-    local amount = math.abs(points) * trade_magic_items.GOLD_PER_POINT
+    local amount = math.abs(points) * trade_magic_items.payment_per_point()
 
     if direction == "give" then
         amount = math.ceil(amount)
     else
-        amount = math.floor(amount / evaluation.their_gold_multiplier)
+        amount = math.floor(amount)
     end
 
     return direction, math.min(amount, ad_gold_limit(direction) or 0)
@@ -2273,7 +2223,6 @@ function trade_magic_items.open_trade_magic_items_panel()
                 end
             end
 
-            pcall(ad_log_tab_counts_vs_rows)
 
             local tick_ok, tick_err = pcall(ad_restore_ticks, panel)
 

@@ -1338,7 +1338,23 @@ Implications:
 
 **First test, what to look at:** rows per tab in the log (`rows magic=…, banners=…, followers=…`) and in the window; same race (e.g. two Skaven) vs other race; Empire ↔ Kislev followers; tab looks and place; scrolling after a tab switch; a traded banner that a unit carries; a human partner's proposal with a banner in it.
 
-### 7.6 Version 1.1.0, item 4: rebalance (user + Claude, 2026-11-16, in discussion, nothing built)
+### 7.6 Version 1.1.0, item 4: rebalance (user + Claude, 2026-11-16, built; test 1 OK)
+
+**Test 1 (user, 2026-11-16, log `script_log_161126_1453`):** works as intended, no script errors from the mod; log numbers match (crafted 20, uncommon 6, second deal frequency −10). Change: on a pure sale the prospects line is a plain 0.0 (see the table). Destruction scale checked in game (user): works.
+
+Built from `plans/2026-11-16-rebalance.md`: DEAL TUNING in the deal manager (`AD_RARITY_POINTS`, `AD_WORN_SHARE`, `AD_ATTITUDE_SCALES`, `AD_DESTRUCTION_SUBCULTURES`, frequency first 5, big deal 35, gold multipliers removed); `evaluate_deal` adds `attitude_scale` / `attitude_percent`; the deal window writes the prospects line as "percent (points)"; the balance button no longer divides by a multiplier. Log line: `Deal chance …: attitude n (scale p%) -> prospects`.
+
+**In-game check** (deal window tooltip; frequency 0 unless noted):
+
+| Deal | Attitude / scale | Expected lines |
+|---|---|---|
+| Demand their unworn rare item | 0, Order | Rarity −14.4, Prospects `+5% (−0.7)`, total −15.1 |
+| Demand their worn rare item | 300, Order | Rarity −14.4, Belongs −4.3, Prospects `−25% (4.7)`, total −14.0 |
+| Demand their worn rare item | −120, Skaven | Rarity −14.4, Belongs −4.3, Prospects `+10% (−1.9)`, total −20.6 |
+| Demand their common item | −300, Order | Rarity −2.5, Prospects `+100% (−2.5)`, total −5.0 |
+| Offer our rare, demand 14 400 gold | −200, any | Rarity +14.4, Economic −14.4, total 0.0 (no ×3 any more) |
+| Destruction partner, nothing demanded | 350 | Prospects plain `0.0` (user, test 1: on a pure sale the percentage changes nothing, so no percent and no colour; `their_price` = 0) |
+| Second deal with the same faction this turn | — | Deals frequency −5.0 |
 
 Complaints (user, from players and own play): selling an item gives too much gold, often the AI's whole treasury, while item prices themselves feel low; attitude weighs so much that factions everybody hates (destruction) can hardly trade; bonuses add up oddly (some items free, some penalties huge). Scale (user): 20 000 gold is about the best income per turn of the richest factions; buildings 2–20 000, main settlement tiers often 6 000 / 15 000; the dearest unit upkeep is about 700 a turn.
 
@@ -1346,12 +1362,14 @@ Complaints (user, from players and own play): selling an item gives too much gol
 - Rarity points (1 point = 1 000 gold, kept): **2.5 / 6 / 14.4 / 20** (common / uncommon / rare / crafted). Rule kept: each rarity = previous × 2.4 (x2 + 20%); crafted stands apart = rare × 1.39, as before (50 / 36).
 - Worn by one of their characters: **+30% of the item's rarity points** (replaces 5 / 10 / 15 / 20).
 - Attitude becomes a **percentage on the price of their items** (rarity + worn), up or down; replaces the point tiers. Best attitude: **at most −25%**. Order scale (user, 2026-11-16), first tier that matches: ≥ 300 −25%, ≥ 200 −20%, ≥ 150 −15%, ≥ 100 −10%, ≥ 50 −5%, ≥ 25 0%; between −25 and 25 **+5%**; ≤ −25 +10%, ≤ −50 +20%, ≤ −100 +35%, ≤ −150 +50%, ≤ −200 +70%, ≤ −300 **+100%** (price ×2; bad side smoothed so the steps grow: +10, +15, +15, +20, +30).
-- Destruction factions get their own attitude scale: smaller penalties starting at a worse attitude, smaller bonuses. A fixed list race → scale; the partner's race decides which scale is used. Destruction scale (user, 2026-11-16): ≥ 300 −12.5%, ≥ 200 −10%, ≥ 150 −7.5%, ≥ 100 −5%, ≥ 50 −2.5% (half of Order), ≥ 25 0%; between −25 and 25 0%; ≤ −25 0%, ≤ −50 +5%, ≤ −100 +10%, ≤ −150 +20%, ≤ −200 +30%, ≤ −300 +50%. Destruction list (user, 2026-11-16): Warriors of Chaos, Daemons of Chaos (Khorne, Nurgle, Slaanesh, Tzeentch, Daemon Prince), Beastmen, Norsca, Greenskins, Skaven, Chaos Dwarfs, Vampire Counts, Vampire Coast, Ogre Kingdoms. Everyone else is Order: Empire, Southern Realms, Bretonnia, Kislev, Grand Cathay, Dwarfs, High Elves, Wood Elves, Lizardmen, Tomb Kings, and Dark Elves (user: they value their trinkets and would not part with them easily). Subculture keys to be taken from the db when building.
+- Destruction factions get their own attitude scale: smaller penalties starting at a worse attitude, smaller bonuses. A fixed list race → scale; the partner's race decides which scale is used. Destruction scale (user, 2026-11-16): ≥ 300 −12.5%, ≥ 200 −10%, ≥ 150 −7.5%, ≥ 100 −5%, ≥ 50 −2.5% (half of Order), ≥ 25 0%; between −25 and 25 0%; ≤ −25 0%, ≤ −50 +5%, ≤ −100 +10%, ≤ −150 +20%, ≤ −200 +30%, ≤ −300 +50%. Destruction list (user, 2026-11-16): Warriors of Chaos, Daemons of Chaos (Khorne, Nurgle, Slaanesh, Tzeentch, Daemon Prince), Beastmen, Norsca, Greenskins, Skaven, Chaos Dwarfs, Vampire Counts, Vampire Coast, Ogre Kingdoms, Nagash's Undead Legions (`wh3_dlc29_sc_nag_undead_legions`, found in the db while planning; user: Destruction). Everyone else is Order: Empire, Southern Realms, Bretonnia, Kislev, Grand Cathay, Dwarfs, High Elves, Wood Elves, Lizardmen, Tomb Kings, and Dark Elves (user: they value their trinkets and would not part with them easily). Subculture keys to be taken from the db when building.
 - Recently traded stays as it is (50% of rarity, fading over 10 turns, counted on the base price).
 - Rejected: different buy and sell prices (user: not an RPG, recently traded already does that).
 - Later: the "big deal" threshold (once prices are set); ancillary points 2 / 4 / 8 (with items at 2.5 a common banner is almost a common item).
 
-**Draft, parked (user: still feels complex, back to it later):** replace deals frequency (and the ×2 / ×3 gold multipliers, and a treasury cap) by "treasury strain": the AI's gold is dearer the more of its current treasury it gives. Free zone 30% (paid at full price), reserve 10% (never paid); in between the gold weighs 1 / (1 − depth), depth = how far the deal reaches into the 30–90% band. Memory: gold paid to players goes into a pool (remaining + new, 15 turns from the last payment, fading evenly); the pool counts as already-given gold of the **current** treasury (pool / treasury now). Fallback if dropped: deals frequency starting lower (5 → 10 → 20 or 2.5 → 5 → 10 → 20).
+**Decision after test 1 (user, 2026-11-16):** deals frequency stays — the simpler the better; the draft below is dropped unless something as simple turns up. If emptying the AI's treasury is still a problem in play, the simplest add-on is a hard cap: the AI pays at most a share of its treasury per deal (one number, e.g. 50%). **Spare idea, not built (user: keep it for when more complaints come):** gold the AI pays = min(price, 50% of its treasury); today's cap is 100% (`ad_gold_limit`). A cap below the price still makes the deal good for the AI, so it agrees and the balance button offers the capped sum. With deals frequency it shrinks repeated sales (treasury 30 000, a crafted item each turn: 15 000, then 7 500, then 3 750) and never empties the treasury; rich AIs pay full price.
+
+**Draft, dropped (was: user: still feels complex, back to it later):** replace deals frequency (and the ×2 / ×3 gold multipliers, and a treasury cap) by "treasury strain": the AI's gold is dearer the more of its current treasury it gives. Free zone 30% (paid at full price), reserve 10% (never paid); in between the gold weighs 1 / (1 − depth), depth = how far the deal reaches into the 30–90% band. Memory: gold paid to players goes into a pool (remaining + new, 15 turns from the last payment, fading evenly); the pool counts as already-given gold of the **current** treasury (pool / treasury now). Fallback if dropped: deals frequency starting lower (5 → 10 → 20 or 2.5 → 5 → 10 → 20).
 
 - Attitude does **not** touch the gold the AI pays (user, 2026-11-16: an extra setting for now, back if needed): the ×2 / ×3 multipliers on demanded gold go.
 
@@ -1360,7 +1378,63 @@ Complaints (user, from players and own play): selling an item gives too much gol
 
 - Ancillaries (Banners / Followers tabs) keep **2 / 4 / 8** (crafted copies rare), worn **+30%** like items (was 0.5 / 1 / 1.5).
 
-- Big deal (STATE_GIFT_MEDIUM instead of SMALL): rarity points of both sides together **≥ 35** (was 100; rarity only, no worn, attitude, recent or gold). E.g. two crafted 40, crafted + rare + common 36.9, two rare + uncommon 34.8 are not enough.
+- Big deal (STATE_GIFT_MEDIUM instead of SMALL): rarity points of both sides together **≥ 35** (was 100; rarity only, no worn, attitude, recent or gold). E.g. two crafted (40) and crafted + rare + common (36.9) make it; two rare + uncommon (34.8) and crafted + rare (34.4) do not.
+
+### 7.7 Version 1.1.0, items 2 + 3: settings window (MCT) and the trade agreement rule (user + Claude, 2026-11-16, built, tested)
+
+**Built** (plan `plans/2026-11-16-mct-settings.md`):
+- `script/campaign/mod/diplomacy_trade_magic_items_default_ai_evaluation_values.lua` — the defaults, plain data; `diplomacy_trade_magic_items_mct_fields_and_checks.lua` next to it — the menu's fields in order (section, MCT key, path, kind) with `get` / `set` / `parse`, shared by MCT and the campaign so keys and checks cannot drift apart.
+- `script/mct/settings/diplomacy_trade_magic_items.lua` — the MCT page: the first section takes MCT's default one (no empty header), text inputs with `add_validity_test` = `parse`, checkbox for the rule.
+- `script/campaign/mod/diplomacy_trade_magic_items_settings.lua` — `trade_magic_items.settings` = copy of the defaults, re-read from MCT on `MctInitialized` / `MctFinalized` (a refused or missing value keeps its default, logged); without MCT a first-tick log line "Settings: defaults (MCT not installed, …)".
+- Deal manager: DEAL TUNING constants gone; reads `trade_magic_items.settings`; `trade_magic_items.payment_per_point()` replaces `GOLD_PER_POINT` (also in the screen's balance button); attitude percent capped at −100%. Kept in code: the Destruction subculture list, frequency growth ×2, the deal events.
+- Button: the at-war block is now "blocked: war / no_trade_agreement" (`ad_blocked`); war first; new tooltip key `trade_magic_items_button_needs_trade_agreement` (EN draft: "Not available without a trade agreement with this faction. Sign a trade agreement first."; RU pass later — without a RU text the button keeps its normal tooltip). `trade_agreement_with` in a pcall: if it fails, trading is not blocked.
+- Loc (EN): 93 `mct_diplomacy_trade_magic_items_*` keys (title, author, description, 8 sections, 41 fields × text + tooltip with the default), in their own file `text/diplomacy_trade_magic_items_mct.loc.tsv` (user, 2026-11-16); the RU pack will need its own `_mct` file for the translation.
+- Shared files renamed (user): `diplomacy_trade_magic_items_default_ai_evaluation_values.lua` (was defaults.lua) and `diplomacy_trade_magic_items_mct_fields_and_checks.lua` (was options.lua, then settings_menu_fields.lua / mct_fields_and_checks.lua), now directly in `script/campaign/mod/` with the mod prefix like our other scripts (user, 2026-11-16). **PROVEN (MCT test 1, log `script_log_161126_1703`):** the campaign loader also runs subfolders of `script/campaign/mod` ("Loading mod file [script\campaign\mod\diplomacy_trade_magic_items\…]"), so they run twice (loader + `require`); harmless, they only return data — user: keep them with our scripts anyway.
+- **MCT test 1 (user, 2026-11-16):** the page and fields work. Found: (1) **the game's Lua has no `math.huge`** → the nan/inf check crashed every settings read (MCT values never applied); now `value - value ~= 0`; (2) **numbers are single precision in game**: `tostring(14.4)` = "14.39999961853" → `spec.format` (at most 2 decimals) for the field defaults and the log; (3) no texts (raw keys, "No Title Assigned"): the built pack's loc had none of the new keys (searched the .pack: "Items and ancillaries you offer" present, `mct_…` absent) — the TSV with the new rows was not imported; four tooltips had double quotes, removed in case they broke the import.
+- **MCT test 2 (user, 2026-11-16):** page, texts, values and the rule work (button greyed with the new tooltip). Changes: MCT splits sections between its two columns by count (`per_column = ceil(n / 2)`), so the attitude scales are split into friendly / neutral / hostile sections (12 sections, 6 + 6): left Rules, Prices, item prices, banner prices, worn, deal memory; right the six attitude sections. "Gold per point" shown as "Payment per point" (key unchanged). Tooltips kept only where not obvious (rule, payment per point, worn, frequency penalty, recent %, big deal — now with the gift values +10 / +20). Button tooltips (EN): war "You cannot trade while you are at war with this faction. Make peace first.", no agreement "You are not trading with this faction. Sign a trade agreement first."
+- Layout reworked (user, after test 2): back to 2 attitude sections; worn moved into Prices; 7 sections = 4 left (Rules, Prices = payment per point + worn, item prices, banner prices) + 3 right (Deal memory, Order, Destruction). Fewer texts: same labels share one loc key (field option `label`, set with `set_text`; MCT reads it when the field's own `_text` key is absent): `rarity_common…crafted` for items and banners, `attitude_300…minus_300` for both scales. The MCT loc file has 41 rows (was 62; first version 93).
+- **MCT test 3 (user, 2026-11-16, logs `script_log_161126_1805` / `_1811`): PASSED.** Page and layout fine. Log: "Settings from MCT (game loaded): all defaults"; Apply → "Settings from MCT (settings applied): trade_agreement_only=true, frequency_first=50" at once; the button blocked without an agreement ("Item trading blocked (no_trade_agreement)"), so `trade_agreement_with` works. MCT turned off and a save with changed settings loaded → "Settings: defaults (MCT not installed)", the mod on its defaults (user). No script errors. Not tested: MP (host values to the other player).
+- **MP test (user, 2026-11-16, logs `script_log_161126_1848` / `_1913`): no problems.** Player-to-player: four proposal / counteroffer rounds, then a 17-item deal accepted (`STATE_GIFT_MEDIUM` = big deal at the new threshold); AI deals in the same campaign (`STATE_GIFT_SMALL`, deals frequency counted). Only script error: vanilla (interventions). Both logs say "Settings: defaults (MCT not installed)": MCT was not active in this MP game, so the host → client MCT values remain untested.
+- RU pass 1.1.0 (user, 2026-11-16): "Ancillaries" = "Спутники" as in the game (title "Торговля Магическими Предметами & Спутниками", button "Торговля магическими предметами & спутниками"); "points" = "пункты". All 24 new / changed keys of the main loc translated (incl. `their_items` capital fixed); new RU file `text/diplomacy_trade_magic_items_mct.loc.tsv` (41 rows). Internal key renamed `gold_per_point` → `payment_per_point` everywhere (settings, MCT option, loc, `trade_magic_items.payment_per_point()`); an MCT value saved under the old key is not read any more (only in test saves).
+- MCT main page: version 1.1.0, Workshop id 3832894578, image `ui/mct/diplomacy_trade_magic_items.png` (user: the Workshop thumbnail, 256x256, shown at 256); title / author / description from loc keys (user: author "Bazulgar", description as approved 2026-11-16). The missing texts in test 1 were most likely just a pack built without the updated loc (user).
+- Review fixes (independent review, 2026-11-16): (1) MP: in a new MP campaign MCT applies the host's values to the other player without `MctFinalized`, so the settings are also re-read (`trade_magic_items.refresh_settings`, quiet unless something changed) before every evaluation, before a deal's frequency is recorded (runs on every machine) and when diplomacy opens; (2) `parse` refuses nan / inf (Lua's `tonumber` takes them); (3) the MCT file adds all 8 sections itself (asking for MCT's "default" section logged an MCT error); (4) a failing `trade_agreement_with` is logged once, not twice a second.
+
+**In-game check:** without MCT: log "Settings: defaults", deals as in §7.6. With MCT: our page, sections in order, fields show the defaults; a refused value (e.g. "1,5", "-3" in a price) gives MCT's popup; Apply → log "Settings from MCT (settings applied): …" and the deal window uses the new numbers at once; reload keeps them. Rule on: no agreement → grey button with the new tooltip; war → the war tooltip; with an agreement → normal. MP: the host's values reach the other player (log on both).
+
+**Why (user):** not everyone likes our balance and no balance suits everyone; against the AI players should be free to tune it. Settings only tweak the mod, never break it. Plus a requested optional rule: item trading only with a trade agreement.
+
+**Approach:** MCT (Mod Configuration Tool, Workshop mod, studied in `Other modders examples/Mod Configuration tool`) instead of our own window. Text input fields, not sliders (user: sliders have limits, we don't know the player's range). Rejected: presets, a single "attitude strength" multiplier (user: every tier value editable instead).
+
+**MCT facts (from its code):** loads first of all mods (`script/_lib/mod/!glib_init.lua`) and reads every `script/mct/settings/*.lua` itself; options: checkbox, slider, dropdown, text_input (with `add_validity_test`), sections (collapsible); texts from loc keys `mct_<mod>_<option>_text` / `_tooltip` or set in code; values via `option:get_finalized_setting()`, events `MctInitialized` (game loaded) and `MctFinalized` (player applied); settings saved per campaign in the save under MCT's own block (`mct_registry`); in MP the host's settings are sent to the other player (`MctMpFinalized`). `require "script.x.y"` works in game (MCT uses it).
+
+**Without MCT:** our defaults, always. We never copy MCT values into our save: with MCT off its block stays in the save unread; turned back on, the player's settings return.
+
+**Settings (41), in this order:**
+| Section | Fields | Default |
+|---|---|---|
+| Rules | trade only with a trade agreement (checkbox) | off |
+| Prices | gold per point | 1000 |
+| Prices, items | common, uncommon, rare, crafted | 2.5, 6, 14.4, 20 |
+| Prices, banners and followers | common, uncommon, rare | 2, 4, 8 |
+| Items on characters | worn, % of the price | 30 |
+| Attitude, Order, % | 13 tiers (labels are the fixed borders ≥300 … ≤−300) | −25, −20, −15, −10, −5, 0, 5, 10, 20, 35, 50, 70, 100 |
+| Attitude, Destruction, % | the same 13 tiers | −12.5, −10, −7.5, −5, −2.5, 0, 0, 0, 5, 10, 20, 30, 50 |
+| Deal memory | deals frequency first penalty (0 = off); turns until it resets; recently traded % of rarity; turns until it fades; big deal threshold | 5, 15, 50, 10, 35 |
+
+Fixed in the mod: the tier borders, the race → scale list, frequency growth ×2, the crafted ancillary row (= rare).
+
+**Validation:** numbers only. Prices, gold per point, worn %, recently traded %, frequency penalty, big deal threshold: ≥ 0 (gold per point > 0). Turns: whole numbers ≥ 1. Tier values: any number, no order enforced (user freedom). One guard in the evaluation: the total discount on their items is at most 100% (never cheaper than free).
+
+**Trade agreement rule:** with the option on, the Trade Magic Items button is greyed when there is no trade agreement with the partner, with its own tooltip (text for the user to approve); war keeps priority (its tooltip wins). `faction:trade_agreement_with(other)` (seen in AI_settlement_trading_mod, **HYPOTHESIS** until tested). Mid-deal changes need no handling (user: neither war nor the end of an agreement can happen while our window is open). My call: the rule applies to human partners too (same button).
+
+**Code layout (my call):**
+- `script/campaign/mod/diplomacy_trade_magic_items_default_ai_evaluation_values.lua` (new): returns the default values, the only place they are written.
+- `script/mct/settings/diplomacy_trade_magic_items.lua` (new): MCT registration (sections, fields, validation, texts) from the defaults; read only by MCT.
+- `script/campaign/mod/diplomacy_trade_magic_items_settings.lua` (new): current values = defaults, overlaid by MCT's when MCT is there (on `MctInitialized`, again on `MctFinalized`); what the rest of the mod reads.
+- Deal manager: the DEAL TUNING block goes; the evaluation reads the settings. The button script reads the rule.
+- Loc: English texts for the 41 fields and their tooltips; Russian in the RU pass.
+
+**To check in game:** the fields' look in MCT; defaults without MCT; a changed value takes effect after Apply without reloading; MP host settings reach the other player; `trade_agreement_with`.
 
 ## 8. Files to request from the user
 

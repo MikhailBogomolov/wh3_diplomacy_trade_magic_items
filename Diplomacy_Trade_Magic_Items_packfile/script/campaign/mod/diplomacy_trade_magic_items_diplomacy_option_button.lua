@@ -261,18 +261,62 @@ end
 
 
 ------------------------------------------------------------
--- AT WAR
+-- AT WAR / NO TRADE AGREEMENT
 -- With Peace in the deal the native actions (payment...) come back
 -- while the factions are still at war; our button stays greyed out
 -- with a tooltip until peace is actually made (user, 2026-10-28).
+-- 1.1.0: with the setting trade_agreement_only (MCT, off by default)
+-- the button is also greyed while there is no trade agreement with the
+-- partner (user, 2026-11-16); war comes first. Neither can change while
+-- our window is open (user), so the button is all that needs it.
 -- The model is asked on every new button and every ~0.5 s.
 ------------------------------------------------------------
 
 local AD_WAR_CHECK_TICKS = 15
+local AD_BUTTON_NO_TRADE_AGREEMENT_KEY = "trade_magic_items_button_needs_trade_agreement"
 
-local ad_at_war = false
+-- why the button is greyed: "war", "no_trade_agreement" or false
+local ad_blocked = false
 local ad_war_ticks = 0
 local ad_war_button_address = nil
+
+
+-- trade_agreement_with is not in CA's docs we have (seen in another mod):
+-- if it fails, trading is not blocked by it
+local ad_trade_agreement_error_logged = false
+
+local function ad_has_trade_agreement(player, target)
+    local ok, result = pcall(function() return player:trade_agreement_with(target) end)
+
+    if not ok then
+        -- asked about twice a second while diplomacy is open: log it once
+        if not ad_trade_agreement_error_logged then
+            trade_magic_items.log("ERROR: trade_agreement_with failed, the rule is not applied: " .. tostring(result))
+            ad_trade_agreement_error_logged = true
+        end
+
+        return true
+    end
+
+    return result == true
+end
+
+
+local function ad_block_reason(player, target)
+    if player == nil or target == nil then
+        return false
+    end
+
+    if player:at_war_with(target) then
+        return "war"
+    end
+
+    if trade_magic_items.settings.trade_agreement_only and not ad_has_trade_agreement(player, target) then
+        return "no_trade_agreement"
+    end
+
+    return false
+end
 
 
 local function ad_follow_war(button)
@@ -287,17 +331,26 @@ local function ad_follow_war(button)
 
     local player = cm:get_faction(cm:get_local_faction_name(true))
     local target = trade_magic_items.get_target_faction()
-    local at_war = player ~= nil and target ~= nil and player:at_war_with(target)
+    local blocked = ad_block_reason(player, target)
 
-    if at_war ~= ad_at_war then
-        trade_magic_items.log("Item trading " .. (at_war and "blocked: at war with " or "unblocked: at peace with ") .. tostring(target and target:name()))
-        ad_at_war = at_war
-        ad_set_button_tooltip(button, at_war and AD_BUTTON_AT_WAR_KEY or AD_BUTTON_TOOLTIP_KEY)
+    if blocked ~= ad_blocked then
+        trade_magic_items.log("Item trading " .. (blocked and ("blocked (" .. blocked .. "): ") or "unblocked: ") .. tostring(target and target:name()))
+        ad_blocked = blocked
+
+        local tooltip = AD_BUTTON_TOOLTIP_KEY
+
+        if blocked == "war" then
+            tooltip = AD_BUTTON_AT_WAR_KEY
+        elseif blocked == "no_trade_agreement" then
+            tooltip = AD_BUTTON_NO_TRADE_AGREEMENT_KEY
+        end
+
+        ad_set_button_tooltip(button, tooltip)
     end
 
-    if at_war and button:CurrentState() ~= "inactive" then
+    if blocked and button:CurrentState() ~= "inactive" then
         button:SetState("inactive")
-    elseif not at_war and button:CurrentState() == "inactive" then
+    elseif not blocked and button:CurrentState() == "inactive" then
         button:SetState("active")
     end
 end
@@ -327,7 +380,7 @@ local function ad_ensure_trade_magic_items_button()
         ad_create_trade_magic_items_button()
 
         -- a new button starts active with the normal tooltip
-        ad_at_war = false
+        ad_blocked = false
         ad_war_button_address = nil
 
         button = find_uicomponent(action_list, AD_BUTTON_ID)
@@ -456,8 +509,8 @@ core:add_listener(
 
         trade_magic_items.log("TRADE MAGIC ITEMS BUTTON CLICKED")
 
-        if ad_at_war then
-            trade_magic_items.log("Ignored: at war with the negotiation partner")
+        if ad_blocked then
+            trade_magic_items.log("Ignored: item trading blocked (" .. ad_blocked .. ")")
             return
         end
 

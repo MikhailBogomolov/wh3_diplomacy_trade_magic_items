@@ -4,12 +4,13 @@ diplomacy_strings_string_diplomatic_option_trade_magic_items	Trade Magic Items &
 diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Exchange or buy magic items, banners and followers for currency or other items.	false
 trade_magic_items_deal_chance_tooltip	The selected faction's opinion of the deal. If this value is positive, they will agree. Otherwise, they will need further convincing.	false
 trade_magic_items_deal_chance_breakdown	Evaluation breakdown:	false
-trade_magic_items_deal_chance_items_offered	Magic items you offer:	false
-trade_magic_items_deal_chance_items_demanded	Magic items you demand:	false
+trade_magic_items_deal_chance_items_offered	Items and ancillaries you offer:	false
+trade_magic_items_deal_chance_items_demanded	Items and ancillaries you demand:	false
 trade_magic_items_offer_payment	Offer Payment	false
 trade_magic_items_demand_payment	Demand Payment	false
 trade_magic_items_deal_chance_total	Diplomatic treaty	false
-trade_magic_items_button_needs_peace	Not available while you are at war with this faction. Make peace first.	false
+trade_magic_items_button_needs_peace	You cannot trade while you are at war with this faction. Make peace first.	false
+trade_magic_items_button_needs_trade_agreement	You are not trading with this faction. Sign a trade agreement first.	false
 trade_magic_items_deal_chance_rarity	Rarity	false
 trade_magic_items_deal_chance_equipped	Belongs to their characters	false
 trade_magic_items_deal_chance_prospects	Diplomatic prospects	false
@@ -17,7 +18,7 @@ trade_magic_items_deal_chance_economic	Economic value	false
 trade_magic_items_their_treasury	Their Treasury	false
 trade_magic_items_balance_tooltip	Balance offer||Automatically add a payment to get a balanced deal.	false
 trade_magic_items_deal_chance_frequency	Deals frequency	false
-trade_magic_items_deal_chance_recent	Items recently traded with this faction	false
+trade_magic_items_deal_chance_recent	Recently traded with this faction	false
 trade_magic_items_deal_chance_this_turn	this turn	false
 trade_magic_items_deal_chance_turn_ago	1 turn ago	false
 trade_magic_items_deal_chance_turns_ago	%d turns ago	false

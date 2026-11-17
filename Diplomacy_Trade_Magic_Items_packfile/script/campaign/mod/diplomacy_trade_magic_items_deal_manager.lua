@@ -26,93 +26,65 @@ trade_magic_items.IGNORE_DEAL_CHANCE = false
 -- the partner agrees when the total is at least this
 trade_magic_items.DEAL_ACCEPT_SCORE = 0
 
--- item rarity (uniqueness group key) -> points: + for an item we
--- offer, - for an item we demand. Each step is x2 + 20% so trading does
--- not beat crafting; crafted stands apart on purpose. Next raise if
--- needed (user): 7, 17, 40, 55
-local AD_RARITY_POINTS = {
-    wh_main_anc_group_common = 6,
-    wh_main_anc_group_uncommon = 15,
-    wh_main_anc_group_rare = 36,
-    wh_main_anc_group_crafted = 50
+-- 1.1.0: every balance number is a setting: trade_magic_items.settings
+-- (diplomacy_trade_magic_items_settings.lua), the mod's defaults
+-- (script/campaign/mod/diplomacy_trade_magic_items_default_ai_evaluation_values.lua) or the player's MCT
+-- values. Only what the menu does not offer stays here.
+
+-- uniqueness group key -> the rarity name the settings use
+local AD_RARITY_NAMES = {
+    wh_main_anc_group_common = "common",
+    wh_main_anc_group_uncommon = "uncommon",
+    wh_main_anc_group_rare = "rare",
+    wh_main_anc_group_crafted = "crafted"
 }
 
--- item rarity -> minus for a demanded item worn by one of their characters
-local AD_BELONGS_TO_CHARACTER_POINTS = {
-    wh_main_anc_group_common = 5,
-    wh_main_anc_group_uncommon = 10,
-    wh_main_anc_group_rare = 15,
-    wh_main_anc_group_crafted = 20
+-- gold in the deal: settings.payment_per_point gold is one point, + when we
+-- give it, - when we demand it. Attitude does not touch gold (1.1.0,
+-- user: the x2 / x3 multipliers went)
+function trade_magic_items.payment_per_point()
+    return trade_magic_items.settings.payment_per_point
+end
+
+-- the partner's subculture picks the attitude scale (settings
+-- attitude_percent.order / .destruction); these are destruction (user,
+-- 2026-11-16), everyone else order. Dark Elves stay order on purpose
+-- (they would not part with their trinkets)
+local AD_DESTRUCTION_SUBCULTURES = {
+    wh_main_sc_chs_chaos = true,
+    wh3_main_sc_dae_daemons = true,
+    wh3_main_sc_kho_khorne = true,
+    wh3_main_sc_nur_nurgle = true,
+    wh3_main_sc_sla_slaanesh = true,
+    wh3_main_sc_tze_tzeentch = true,
+    wh_dlc03_sc_bst_beastmen = true,
+    wh_dlc08_sc_nor_norsca = true,
+    wh_main_sc_grn_greenskins = true,
+    wh_main_sc_grn_savage_orcs = true,
+    wh2_main_sc_skv_skaven = true,
+    wh3_dlc23_sc_chd_chaos_dwarfs = true,
+    wh_main_sc_vmp_vampire_counts = true,
+    wh2_dlc11_sc_cst_vampire_coast = true,
+    wh3_main_sc_ogr_ogre_kingdoms = true,
+    wh3_dlc29_sc_nag_undead_legions = true
 }
 
--- 1.1.0: the same two tables for ancillaries, the Banners and Followers
--- tabs (banners, banner runes, engineering runes, followers); everything
--- on the Magic Items tab (dwarf character runes and character-type items
--- too) uses the tables above. Numbers by the user (2026-11-15). No
--- tradeable ancillary is crafted: that row only copies rare.
-local AD_ANCILLARY_RARITY_POINTS = {
-    wh_main_anc_group_common = 2,
-    wh_main_anc_group_uncommon = 4,
-    wh_main_anc_group_rare = 8,
-    wh_main_anc_group_crafted = 8
-}
-
-local AD_ANCILLARY_BELONGS_TO_CHARACTER_POINTS = {
-    wh_main_anc_group_common = 0.5,
-    wh_main_anc_group_uncommon = 1,
-    wh_main_anc_group_rare = 1.5,
-    wh_main_anc_group_crafted = 1.5
-}
-
--- gold in the deal: this much gold is one point (40000 gold = 40),
--- + when we give it, - when we demand it
-trade_magic_items.GOLD_PER_POINT = 1000
-
--- gold we demand weighs more the less they like us, multiplies the
--- points above; the first tier with attitude <= max_attitude counts.
--- Independent of diplomatic prospects.
-local AD_THEIR_GOLD_MULTIPLIERS = {
-    { max_attitude = -200, multiplier = 3 },
-    { max_attitude = -100, multiplier = 2 }
-}
-
--- their attitude towards us -> diplomatic prospects points. Good
--- attitude: the first tier with attitude >= min_attitude. Bad
--- attitude: the first tier with attitude <= max_attitude. In between:
--- AD_ATTITUDE_MIDDLE_POINTS.
-local AD_ATTITUDE_GOOD_TIERS = {
-    { min_attitude = 200, points = 20 },
-    { min_attitude = 150, points = 15 },
-    { min_attitude = 100, points = 10 },
-    { min_attitude = 50, points = 5 },
-    { min_attitude = 25, points = 0 }
-}
-local AD_ATTITUDE_BAD_TIERS = {
-    { max_attitude = -200, points = -100 },
-    { max_attitude = -150, points = -60 },
-    { max_attitude = -100, points = -45 },
-    { max_attitude = -50, points = -35 },
-    { max_attitude = -25, points = -20 }
-}
-local AD_ATTITUDE_MIDDLE_POINTS = -8
+-- the biggest discount the attitude can give: their items never get
+-- free or cheaper than free, whatever the player types in the menu
+local AD_ATTITUDE_MAX_DISCOUNT = -100
 
 -- recently traded: an item moved between us and them costs extra when it
--- goes back the other way. The minus is the item's rarity points times
--- the share below, right after the deal, and fades evenly to 0 over
--- AD_RECENT_DEAL_TURNS turns. Trading the item again restarts it.
-local AD_RECENT_DEAL_TURNS = 10
--- buying from them what any player sold them
-local AD_RECENT_SOLD_RARITY_SHARE = 0.5
--- selling back what we bought from them, only for the buyer
-local AD_RECENT_BOUGHT_RARITY_SHARE = 0.5
+-- goes back the other way: settings.recent_percent of its rarity points
+-- right after the deal, fading evenly to 0 over settings.recent_turns
+-- turns. Trading the item again restarts it. Both directions (buying
+-- from them what any player sold them; selling back what we bought from
+-- them, only for the buyer) use the same percent.
 
 -- deals frequency: a faction that traded items lately, with anyone, is
--- less willing: AD_DEAL_FREQUENCY_FIRST after its first deal, times
--- AD_DEAL_FREQUENCY_GROWTH after each further one (10, 20, 40, 80...).
--- Gone completely after AD_DEAL_FREQUENCY_TURNS turns without a deal.
-local AD_DEAL_FREQUENCY_FIRST = 10
+-- less willing: settings.frequency_first after its first deal, times
+-- AD_DEAL_FREQUENCY_GROWTH after each further one (5, 10, 20, 40...).
+-- Gone completely after settings.frequency_turns turns without a deal.
 local AD_DEAL_FREQUENCY_GROWTH = 2
-local AD_DEAL_FREQUENCY_TURNS = 15
 
 -- diplomatic event for a done deal, sent both ways: both sides think
 -- better of each other. Value and decay come from cai_personality_
@@ -121,9 +93,8 @@ local AD_DEAL_FREQUENCY_TURNS = 15
 -- Vanilla values stay untouched (user).
 local AD_DEAL_DIPLOMATIC_EVENT = "STATE_GIFT_SMALL"
 -- a big deal instead: rarity points of the items on both sides together
--- reach AD_BIG_DEAL_RARITY
+-- reach settings.big_deal_rarity
 local AD_BIG_DEAL_DIPLOMATIC_EVENT = "STATE_GIFT_MEDIUM"
-local AD_BIG_DEAL_RARITY = 100
 
 
 function trade_magic_items.log(message)
@@ -163,7 +134,7 @@ end
 
 
 -- share of the recently traded minus left (1 on the deal's turn, 0
--- after AD_RECENT_DEAL_TURNS turns or without a record) and how many
+-- after settings.recent_turns turns or without a record) and how many
 -- turns ago the item was traded
 local function ad_recent_share(player, partner, item_id)
     local items = cm:get_saved_value(AD_SAVED_ITEMS)
@@ -175,7 +146,9 @@ local function ad_recent_share(player, partner, item_id)
 
     local turns_ago = cm:model():turn_number() - turn
 
-    return math.max(0, AD_RECENT_DEAL_TURNS - turns_ago) / AD_RECENT_DEAL_TURNS, turns_ago
+    local turns = trade_magic_items.settings.recent_turns
+
+    return math.max(0, turns - turns_ago) / turns, turns_ago
 end
 
 
@@ -204,7 +177,7 @@ end
 
 
 local function ad_faction_deals_active(entry)
-    return entry ~= nil and cm:model():turn_number() - entry.turn < AD_DEAL_FREQUENCY_TURNS
+    return entry ~= nil and cm:model():turn_number() - entry.turn < trade_magic_items.settings.frequency_turns
 end
 
 
@@ -230,7 +203,7 @@ local function ad_deals_frequency_points(faction)
         return 0
     end
 
-    return -AD_DEAL_FREQUENCY_FIRST * AD_DEAL_FREQUENCY_GROWTH ^ (entry.count - 1),
+    return -trade_magic_items.settings.frequency_first * AD_DEAL_FREQUENCY_GROWTH ^ (entry.count - 1),
         cm:model():turn_number() - entry.turn, entry.count
 end
 
@@ -241,31 +214,49 @@ end
 -- total. Numbers: DEAL TUNING above. The screen shows the result.
 ------------------------------------------------------------
 
-local function ad_attitude_points(attitude)
-    for _, tier in ipairs(AD_ATTITUDE_GOOD_TIERS) do
-        if attitude >= tier.min_attitude then
-            return tier.points
-        end
-    end
-
-    for _, tier in ipairs(AD_ATTITUDE_BAD_TIERS) do
-        if attitude <= tier.max_attitude then
-            return tier.points
-        end
-    end
-
-    return AD_ATTITUDE_MIDDLE_POINTS
+-- "order" or "destruction" by the faction's subculture
+local function ad_attitude_scale(faction)
+    return AD_DESTRUCTION_SUBCULTURES[faction:subculture()] and "destruction" or "order"
 end
 
 
-local function ad_their_gold_multiplier(attitude)
-    for _, tier in ipairs(AD_THEIR_GOLD_MULTIPLIERS) do
-        if attitude <= tier.max_attitude then
-            return tier.multiplier
+-- percentage on the price of their items: + dearer, - cheaper for us.
+-- settings.attitude_tiers are in menu order (>= 300 ... <= -300), the
+-- values in settings.attitude_percent[scale] in the same order. Good
+-- tiers: the first, from the top, the attitude reaches. Bad tiers: the
+-- first, from the bottom (<= -300 up). Otherwise the middle one. Never a
+-- discount above AD_ATTITUDE_MAX_DISCOUNT
+local function ad_attitude_percent(scale, attitude)
+    local settings = trade_magic_items.settings
+    local tiers = settings.attitude_tiers
+    local values = settings.attitude_percent[scale]
+    local percent = nil
+
+    for i, tier in ipairs(tiers) do
+        if tier.min_attitude and attitude >= tier.min_attitude then
+            percent = values[i]
+            break
         end
     end
 
-    return 1
+    if percent == nil then
+        for i = #tiers, 1, -1 do
+            if tiers[i].max_attitude and attitude <= tiers[i].max_attitude then
+                percent = values[i]
+                break
+            end
+        end
+    end
+
+    if percent == nil then
+        for i, tier in ipairs(tiers) do
+            if tier.middle then
+                percent = values[i]
+            end
+        end
+    end
+
+    return math.max(percent or 0, AD_ATTITUDE_MAX_DISCOUNT)
 end
 
 
@@ -276,8 +267,16 @@ end
 
 
 local function ad_rarity_points(info)
-    local table_of_points = ad_is_ancillary(info) and AD_ANCILLARY_RARITY_POINTS or AD_RARITY_POINTS
-    local points = table_of_points[info.rarity]
+    local settings = trade_magic_items.settings
+    local rarity = AD_RARITY_NAMES[info.rarity]
+    local points = nil
+
+    if ad_is_ancillary(info) then
+        -- no tradeable ancillary is crafted; one would count as rare
+        points = settings.ancillary_points[rarity == "crafted" and "rare" or rarity]
+    else
+        points = settings.item_points[rarity]
+    end
 
     if not points then
         trade_magic_items.log("WARNING: no rarity points for " .. tostring(info.key) .. " (rarity " .. tostring(info.rarity) .. ")")
@@ -288,24 +287,25 @@ local function ad_rarity_points(info)
 end
 
 
-local function ad_belongs_points(info)
-    local table_of_points = ad_is_ancillary(info) and AD_ANCILLARY_BELONGS_TO_CHARACTER_POINTS or AD_BELONGS_TO_CHARACTER_POINTS
-
-    return table_of_points[info.rarity] or 0
-end
-
-
--- the working selection + gold as breakdown values and their total
+-- the working selection + gold as breakdown values and their total.
+-- attitude_percent / attitude_scale: the partner's attitude tier (0 /
+-- nil without a partner); their_price: rarity + worn of what they give
+-- (0 when we only sell, then the window shows a plain 0.0, user)
 function trade_magic_items.evaluate_deal()
+    if trade_magic_items.refresh_settings then
+        trade_magic_items.refresh_settings("deal evaluated")
+    end
+
     local player_key = cm:get_local_faction_name(true)
     local partner = trade_magic_items.get_target_faction()
     local partner_key = partner and partner:name()
     local attitude = partner and partner:diplomatic_attitude_towards(player_key)
-    local their_items = 0
+    local scale = partner and ad_attitude_scale(partner)
     local evaluation = {
         attitude = attitude,
+        attitude_scale = scale,
+        attitude_percent = (scale and attitude) and ad_attitude_percent(scale, attitude) or 0,
         diplomatic_prospects = 0,
-        their_gold_multiplier = attitude and ad_their_gold_multiplier(attitude) or 1,
         economic_value = 0,
         deals_frequency = 0,
         offered_rarity = 0,
@@ -322,9 +322,9 @@ function trade_magic_items.evaluate_deal()
 
     if trade_magic_items.gold then
         local signed = trade_magic_items.gold.direction == "give" and trade_magic_items.gold.amount
-            or -trade_magic_items.gold.amount * evaluation.their_gold_multiplier
+            or -trade_magic_items.gold.amount
 
-        evaluation.economic_value = signed / trade_magic_items.GOLD_PER_POINT
+        evaluation.economic_value = signed / trade_magic_items.payment_per_point()
     end
 
     if trade_magic_items.working then
@@ -336,7 +336,7 @@ function trade_magic_items.evaluate_deal()
             if partner_key then
                 local share, turns = ad_recent_share(player_key, partner_key, item_id)
 
-                evaluation.offered_recent = evaluation.offered_recent - points * AD_RECENT_BOUGHT_RARITY_SHARE * share
+                evaluation.offered_recent = evaluation.offered_recent - points * trade_magic_items.settings.recent_percent / 100 * share
 
                 if share > 0 and (not evaluation.offered_recent_turns or turns < evaluation.offered_recent_turns) then
                     evaluation.offered_recent_turns = turns
@@ -347,13 +347,12 @@ function trade_magic_items.evaluate_deal()
         for item_id, info in pairs(trade_magic_items.working.list_demands) do
             local points = ad_rarity_points(info)
 
-            their_items = their_items + 1
             evaluation.demanded_rarity = evaluation.demanded_rarity - points
 
             if partner_key then
                 local share, turns = ad_recent_sold_share(partner_key, item_id)
 
-                evaluation.demanded_recent = evaluation.demanded_recent - points * AD_RECENT_SOLD_RARITY_SHARE * share
+                evaluation.demanded_recent = evaluation.demanded_recent - points * trade_magic_items.settings.recent_percent / 100 * share
 
                 if share > 0 and (not evaluation.demanded_recent_turns or turns < evaluation.demanded_recent_turns) then
                     evaluation.demanded_recent_turns = turns
@@ -361,20 +360,19 @@ function trade_magic_items.evaluate_deal()
             end
 
             if info.holder_cqi then
-                evaluation.demanded_equipped = evaluation.demanded_equipped - ad_belongs_points(info)
+                evaluation.demanded_equipped = evaluation.demanded_equipped - points * trade_magic_items.settings.worn_percent / 100
             end
         end
     end
 
-    -- they take our items and pay for them whatever they think of us;
-    -- the attitude counts only when they give away something of theirs.
-    -- A good attitude can make their items free, never more: it stops at
-    -- their price, so it cannot be turned into gold on top
-    if attitude and their_items > 0 then
-        local price = -(evaluation.demanded_rarity + evaluation.demanded_equipped + evaluation.demanded_recent)
+    -- the attitude makes their items dearer or cheaper: a percentage of
+    -- their price (rarity + worn; recently traded counts on the base
+    -- price, user). Our items and anyone's gold are not touched. The
+    -- biggest discount is 25%, so nothing gets free
+    local price = -(evaluation.demanded_rarity + evaluation.demanded_equipped)
 
-        evaluation.diplomatic_prospects = math.min(ad_attitude_points(attitude), price)
-    end
+    evaluation.their_price = price
+    evaluation.diplomatic_prospects = price > 0 and -price * evaluation.attitude_percent / 100 or 0
 
     evaluation.points_without_gold = evaluation.diplomatic_prospects + evaluation.deals_frequency
         + evaluation.offered_rarity + evaluation.offered_recent
@@ -513,7 +511,7 @@ local function ad_deal_diplomatic_event(selection)
         end
     end
 
-    return rarity >= AD_BIG_DEAL_RARITY and AD_BIG_DEAL_DIPLOMATIC_EVENT or AD_DEAL_DIPLOMATIC_EVENT
+    return rarity >= trade_magic_items.settings.big_deal_rarity and AD_BIG_DEAL_DIPLOMATIC_EVENT or AD_DEAL_DIPLOMATIC_EVENT
 end
 
 
@@ -760,6 +758,11 @@ local function ad_execute_relation_op(parts, human)
     trade_magic_items.log("  " .. parts[4] .. ": " .. player:name() .. " <-> " .. partner:name())
 
     if not human then
+        -- the frequency is recorded on every machine: same numbers first
+        if trade_magic_items.refresh_settings then
+            trade_magic_items.refresh_settings("deal recorded")
+        end
+
         ad_record_faction_deal(player:name())
         ad_record_faction_deal(partner:name())
         trade_magic_items.log("  deals of " .. partner:name() .. ": " .. ad_faction_deals_entry(partner:name()).count)

@@ -1,0 +1,43 @@
+key	text	tooltip
+#Loc;1;text/diplomacy_trade_magic_items_mct.loc		
+mct_diplomacy_trade_magic_items_title	Торговля Магическими Предметами и Спутниками	false
+mct_diplomacy_trade_magic_items_author	Bazulgar	false
+mct_diplomacy_trade_magic_items_description	Обменивайтесь магическими предметами, знамёнами и спутниками с другими фракциями через дипломатию. Здесь можно настроить, как ИИ оценивает такие сделки: цены предметов, влияние дипломатических отношений, память сделок и опциональное правило доступа торговли предметами только при наличии торгового соглашения.	false
+mct_diplomacy_trade_magic_items_section_rules	Правила	false
+mct_diplomacy_trade_magic_items_section_prices	Цены	false
+mct_diplomacy_trade_magic_items_section_items	Цены магических предметов (в пунктах)	false
+mct_diplomacy_trade_magic_items_section_ancillaries	Цены знамён и спутников (в пунктах)	false
+mct_diplomacy_trade_magic_items_section_attitude_order	Отношения: фракции Порядка (% от цены)	false
+mct_diplomacy_trade_magic_items_section_attitude_destruction	Отношения: фракции Разрушения (% от цены)	false
+mct_diplomacy_trade_magic_items_section_memory	Память сделок	false
+mct_diplomacy_trade_magic_items_trade_agreement_only_text	Торговать только при торговом соглашении	false
+mct_diplomacy_trade_magic_items_trade_agreement_only_tooltip	Магическими предметами, знамёнами и спутниками можно торговать только с фракциями, с которыми у вас заключено торговое соглашение. По умолчанию выключено.	false
+mct_diplomacy_trade_magic_items_payment_per_point_text	Ценность пункта в валюте	false
+mct_diplomacy_trade_magic_items_payment_per_point_tooltip	Сколько золота стоит один пункт оценки сделки. Меняет все цены в золоте. По умолчанию: 1000.	false
+mct_diplomacy_trade_magic_items_rarity_common	Обычный	false
+mct_diplomacy_trade_magic_items_rarity_uncommon	Необычный	false
+mct_diplomacy_trade_magic_items_rarity_rare	Редкий	false
+mct_diplomacy_trade_magic_items_rarity_crafted	Созданный	false
+mct_diplomacy_trade_magic_items_attitude_25	Отношения 25 и выше	false
+mct_diplomacy_trade_magic_items_attitude_50	Отношения 50 и выше	false
+mct_diplomacy_trade_magic_items_attitude_100	Отношения 100 и выше	false
+mct_diplomacy_trade_magic_items_attitude_150	Отношения 150 и выше	false
+mct_diplomacy_trade_magic_items_attitude_200	Отношения 200 и выше	false
+mct_diplomacy_trade_magic_items_attitude_300	Отношения 300 и выше	false
+mct_diplomacy_trade_magic_items_attitude_middle	Отношения от -25 до 25	false
+mct_diplomacy_trade_magic_items_attitude_minus_25	Отношения -25 и ниже	false
+mct_diplomacy_trade_magic_items_attitude_minus_50	Отношения -50 и ниже	false
+mct_diplomacy_trade_magic_items_attitude_minus_100	Отношения -100 и ниже	false
+mct_diplomacy_trade_magic_items_attitude_minus_150	Отношения -150 и ниже	false
+mct_diplomacy_trade_magic_items_attitude_minus_200	Отношения -200 и ниже	false
+mct_diplomacy_trade_magic_items_attitude_minus_300	Отношения -300 и ниже	false
+mct_diplomacy_trade_magic_items_worn_percent_text	Используется их персонажами, %	false
+mct_diplomacy_trade_magic_items_worn_percent_tooltip	Запрошенный предмет, используемый одним из персонажей оппонента, стоит дороже на этот процент от цены. 0 — выключено. По умолчанию: 30.	false
+mct_diplomacy_trade_magic_items_frequency_first_text	Штраф за частоту сделок	false
+mct_diplomacy_trade_magic_items_frequency_first_tooltip	Сколько пунктов фракция требует сверху после первой сделки с кем угодно; удваивается с каждой следующей. 0 — выключено. По умолчанию: 5.	false
+mct_diplomacy_trade_magic_items_frequency_turns_text	Сброс частоты сделок через, ходов	false
+mct_diplomacy_trade_magic_items_recent_percent_text	Недавно участвовал в торговле, % редкости	false
+mct_diplomacy_trade_magic_items_recent_percent_tooltip	Надбавочная стоимость для предмета, который недавно участвовал в торговле с той же фракцией, в процентах от его пунктов редкости. 0 — выключено. По умолчанию: 50.	false
+mct_diplomacy_trade_magic_items_recent_turns_text	Наценка за недавнюю торговлю исчезает за, ходов	false
+mct_diplomacy_trade_magic_items_big_deal_rarity_text	Порог большой сделки, пункты редкости	false
+mct_diplomacy_trade_magic_items_big_deal_rarity_tooltip	Начиная с этой суммы пунктов редкости обеих сторон, сделка улучшает отношения как средний подарок (+20 к отношениям) вместо малого (+10). По умолчанию: 35.	false

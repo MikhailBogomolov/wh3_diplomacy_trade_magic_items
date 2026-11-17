@@ -1,15 +1,16 @@
 key	text	tooltip
 #Loc;1;text/diplomacy_trade_magic_items.loc		
-diplomacy_strings_string_diplomatic_option_trade_magic_items	Торговля магическими предметами	false
-diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Обменивайтесь или покупайте магические предметы за деньги или другие предметы.	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items	Торговля магическими предметами и спутниками	false
+diplomacy_strings_string_diplomatic_option_trade_magic_items_tooltip	Обменивайте или покупайте магические предметы, знамёна и спутников за выплаты или другие предметы.	false
 trade_magic_items_deal_chance_tooltip	Мнение выбранной фракции о сделке. Если этот показатель имеет положительное значение, фракция согласится на сделку. Если же нет — потребуются дополнительные уговоры	false
 trade_magic_items_deal_chance_breakdown	Оценка:	false
-trade_magic_items_deal_chance_items_offered	Магические предметы, которые вы предлагаете:	false
-trade_magic_items_deal_chance_items_demanded	Магические предметы, которые вы требуете:	false
+trade_magic_items_deal_chance_items_offered	Предметы и спутники, которых вы предлагаете:	false
+trade_magic_items_deal_chance_items_demanded	Предметы и спутники, которых вы требуете:	false
 trade_magic_items_offer_payment	Предл. плату	false
 trade_magic_items_demand_payment	Треб. плату	false
 trade_magic_items_deal_chance_total	Дипломатическое соглашение	false
-trade_magic_items_button_needs_peace	Опция не доступна, пока вы в состоянии войны с этой фракцией. Вначале заключите мир.	false
+trade_magic_items_button_needs_peace	Вы не можете торговать, пока воюете с этой фракцией. Сначала заключите мир.	false
+trade_magic_items_button_needs_trade_agreement	Вы не торгуете с этой фракцией. Сначала заключите торговое соглашение.	false
 trade_magic_items_deal_chance_rarity	Редкость	false
 trade_magic_items_deal_chance_equipped	Принадлежат их персонажам	false
 trade_magic_items_deal_chance_prospects	Перспективы дипломатии	false
@@ -17,7 +18,7 @@ trade_magic_items_deal_chance_economic	Экономическая ценност
 trade_magic_items_their_treasury	Их Казна	false
 trade_magic_items_balance_tooltip	Уравнять предложение||Автоматически добавьте плату, чтобы сбалансировать предложение	false
 trade_magic_items_deal_chance_frequency	Частота сделок	false
-trade_magic_items_deal_chance_recent	Предмет недавно участвовал в торговле с этой фракцией	false
+trade_magic_items_deal_chance_recent	Недавно участвовали в торговле с этой фракцией	false
 trade_magic_items_deal_chance_this_turn	на этом ходу	false
 trade_magic_items_deal_chance_turn_ago	1 ход назад	false
 trade_magic_items_deal_chance_turns_ago	%d ходов назад	false
@@ -25,20 +26,20 @@ trade_magic_items_deal_chance_deal_number	%d сделка	false
 trade_magic_items_propose_player_tooltip	Сделать предложение||Предложить вышеуказанную сделку другому игроку	false
 trade_magic_items_accept_tooltip	Принять||Принять предложенную сделку.	false
 trade_magic_items_decline_tooltip	Отказать||Отказать предложенной сделке.	false
-trade_magic_items_panel_title	Торговля Магическими Предметами	false
-trade_magic_items_rules_hint	Выберите, что предложить или потребовать. Правила — на вкладках.	false
+trade_magic_items_panel_title	Торговля Магическими Предметами и Спутниками	false
+trade_magic_items_rules_hint	Выберите чем торговать. Правила — на вкладках.	false
 trade_magic_items_your_items	Ваши Магические Предметы	false
-trade_magic_items_their_items	Их Магические предметы	false
+trade_magic_items_their_items	Их Магические Предметы	false
 trade_magic_items_tab_magic_items	Магические предметы	false
 trade_magic_items_tab_banners	Знамёна	false
 trade_magic_items_tab_followers	Спутники	false
-trade_magic_items_tab_magic_items_tooltip	Магическими предметами можно торговать с любой фракцией. Уникальные предметы и предметы, которые могут носить только именные персонажи, не продаются. Руны гномов и предметы для определённых типов персонажей можно передать только фракциям, которые могут их использовать, обычно той же расы.	false
-trade_magic_items_tab_banners_tooltip	Магические знамёна, руны знамён и инженерные руны. Кроме базовых знамён, которые может нести кто угодно, ими можно торговать только с фракциями, которые могут их использовать, обычно той же расы. Уникальные знамёна не продаются.	false
-trade_magic_items_tab_followers_tooltip	Спутниками можно торговать только с фракциями, которые могут их использовать, обычно той же расы. Уникальные спутники не продаются.	false
-trade_magic_items_tab_banners_other_race	Знамён для обмена нет. Кроме базовых знамён, которые может нести кто угодно, знамёнами можно торговать только с фракциями, которые могут их использовать, обычно той же расы.	false
-trade_magic_items_tab_banners_empty	Ни у одной стороны нет знамён для обмена.	false
-trade_magic_items_tab_followers_other_race	Спутниками можно торговать только с фракциями, которые могут их использовать, обычно той же расы.	false
-trade_magic_items_tab_followers_empty	Ни у одной стороны нет спутников для обмена.	false
+trade_magic_items_tab_magic_items_tooltip	Большинством магических предметов можно торговать с любой фракцией. Руны гномов и предметы для определённых типов персонажей передаются только в пределах одной расы. Уникальными предметами и предметами, которые могут носить только именные персонажи, торговать нельзя.	false
+trade_magic_items_tab_banners_tooltip	Магические знамёна и руны знамён. Кроме базовых, знамёнами можно торговать только в пределах той же или родственной расы. Уникальными знамёнами торговать нельзя.	false
+trade_magic_items_tab_followers_tooltip	Спутниками можно торговать только в пределах той же или родственной расы. Уникальными спутниками торговать нельзя.	false
+trade_magic_items_tab_banners_other_race	Нет знамён для обмена. Кроме базовых, знамёнами можно торговать только в пределах той же или родственной расы.	false
+trade_magic_items_tab_banners_empty	Ни у одной из сторон нет знамён для обмена.	false
+trade_magic_items_tab_followers_other_race	Нет спутников для обмена. Спутниками можно торговать только в пределах той же или родственной расы.	false
+trade_magic_items_tab_followers_empty	Ни у одной из сторон нет спутников для обмена.	false
 trade_magic_items_your_banners	Ваши Знамёна	false
 trade_magic_items_their_banners	Их Знамёна	false
 trade_magic_items_your_followers	Ваши Спутники	false

@@ -32,9 +32,12 @@ A Total War: WARHAMMER III mod that adds **trading of magic items through diplom
 
 | File | Purpose | State |
 |---|---|---|
-| `script/campaign/mod/diplomacy_trade_magic_items_deal_manager.lua` | log, every number of the deal (`DEAL TUNING`), deal memory in the savegame, evaluation, the trade, human deal events: **v1.1.0 in work** (`AD_VERSION` is here; 1.1.0 = findings §7.5; 1.0.0 = 0.14.0 without the temporary logs, the release; 1.0.1 = mirrors regenerated for patch 9.0.5, findings §7.4) | see findings |
+| `script/campaign/mod/diplomacy_trade_magic_items_deal_manager.lua` | log, what is left of the deal tuning (Destruction list, frequency growth, deal events; the numbers are settings since 1.1.0), deal memory in the savegame, evaluation, the trade, human deal events: **v1.1.0 in work** (`AD_VERSION` is here; 1.1.0 = findings §7.5; 1.0.0 = 0.14.0 without the temporary logs, the release; 1.0.1 = mirrors regenerated for patch 9.0.5, findings §7.4) | see findings |
+| `script/campaign/mod/diplomacy_trade_magic_items_settings.lua` | 1.1.0: `trade_magic_items.settings` = defaults, overlaid by MCT values when MCT is installed | findings §7.7 |
+| `script/campaign/mod/diplomacy_trade_magic_items_default_ai_evaluation_values.lua` | 1.1.0: every balance number (the only place they are written); `diplomacy_trade_magic_items_mct_fields_and_checks.lua` next to it: the settings menu fields, shared by MCT and the campaign | findings §7.7 |
+| `script/mct/settings/diplomacy_trade_magic_items.lua` | 1.1.0: the MCT menu page; read only by MCT | findings §7.7 |
 | `script/campaign/mod/diplomacy_trade_magic_items_screen.lua` | our window: lists, tabs (1.1.0), selection, gold, chance, balance button, OK / Cancel, trade watch | see findings |
-| `script/enable_console_logging` | turns the script log on; **back for 1.1.0 testing (2026-11-15), remove before the release** | testing only |
+| `script/enable_console_logging` | turns the script log on; **removed for the 1.1.0 release (2026-11-16)**, copy in `backups/enable_console_logging.removed_for_release` — put it back for a debug run | testing only |
 | `script/campaign/mod/diplomacy_trade_magic_items_diplomacy_option_button.lua` | action row button, watcher, war lock, diplomacy helpers | see findings |
 | `script/campaign/mod/diplomacy_tradeable_magic_items_mirror.lua` | **GENERATED** by `tools/build_diplomacy_tradeable_mirrors.js`: global table original key → faction set of the 595 race-locked tradeable items (last run: patch 9.0.5, 2026-11-03, findings §7.4) | regenerate after game patches |
 | `db/<7 tables>/diplomacy_tradeable_magic_items_mirror.tsv`, `text/diplomacy_tradeable_magic_items_mirror.loc.tsv` | **GENERATED** mirror items `<key>_diplomacy_tradeable` (`faction_set = all`, `randomly_dropped = false`, no DLC ownership row since 0.12.1) in `ancillaries_tables`, `ancillary_info_tables`, `ancillary_to_effects_tables`, `ancillary_to_included_agents_tables`; mirror item sets `<set>_diplomacy_tradeable` in `ancillary_sets_tables`, `ancillary_set_ancillary_junctions_tables`, `ancillary_set_effect_junctions_tables`; loc English only | regenerate after game patches |
@@ -43,12 +46,14 @@ A Total War: WARHAMMER III mod that adds **trading of magic items through diplom
 | `ui/campaign ui/ad_holder_portrait.twui.xml` | callback-free "equipped by" portrait for rows of other factions | working |
 | `db/diplomatic_actions_tables/diplomacy_trade_magic_items.tsv` | our action key (sort_order 210); renamed from `diplomacy_magic_items_trading.tsv` (2026-11-03), before that `items_diplomacy_trading.tsv` | working |
 | `text/diplomacy_trade_magic_items.loc.tsv` | loc (renamed from `diplomacy_magic_items_trading.loc.tsv` 2026-11-03, before that `artifact_diplomacy_trading.loc.tsv`; keys prefixed `trade_magic_items_`, were `items_trading_`): button title/tooltip; deal chance tooltip texts `trade_magic_items_deal_chance_*` (placeholders), gold switch labels `trade_magic_items_offer_payment` / `trade_magic_items_demand_payment`, `trade_magic_items_deal_chance_total`, `trade_magic_items_button_needs_peace`; panel title, hint and column titles (0.12.10, set by script) | working |
+| `text/diplomacy_trade_magic_items_mct.loc.tsv` | 1.1.0: texts of the MCT settings page (`mct_diplomacy_trade_magic_items_*`: title, author, description, sections, fields and tooltips) | findings §7.7 |
 
 ### Translation pack folder `Diplomacy_Trade_Magic_Items_ru_packfile/` (Russian, released pack `!diplomacy_trade_magic_items_ru.pack`, findings §7.3)
 
 | File | Purpose |
 |---|---|
 | `text/diplomacy_trade_magic_items.loc.tsv` | same keys as the main pack, values written by the user |
+| `text/diplomacy_trade_magic_items_mct.loc.tsv` (RU pack) | 1.1.0: Russian texts of the MCT settings page, same keys as the main pack | findings §7.7 |
 | `text/diplomacy_tradeable_magic_items_mirror.loc.tsv` | **GENERATED** by `tools/build_ru_mirror_loc.js` from the Russian vanilla loc; regenerate after the main mirror generator |
 
 Every text of ours goes through a loc key; only texts copied from vanilla with their vanilla layout label are left to the engine (findings §7.3).
@@ -165,7 +170,7 @@ Removed 2026-10-28 (Plan B cleanup, also delete them from the pack): `db/effects
 
 ## 7. Next steps
 
-**In work: 1.1.0** (user, 2026-11-15), each item on its own: 1. trading banners, followers and same-race items (built, waiting for the first test, findings §7.5); 2. balance numbers in the settings window (MCT); 3. optional rule: item trading only with a trade agreement; 4. balance fixes (to look at then: banners and followers, 2–8 rarity points, barely count towards the "big deal" event at rarity ≥ 100). Order changed (user, 2026-11-15): item 1 done, the rebalance (4) comes before the settings window (2), so the window starts from the new defaults. Logs are on again for the tests.
+**In work: 1.1.0** (user, 2026-11-15), each item on its own: 1. trading banners, followers and same-race items (done, Esc = Cancel still to check, findings §7.5); 2. balance numbers in the settings window (MCT) and 3. the optional trade agreement rule (built and tested 2026-11-16, MP tested without MCT, findings §7.7; plan `plans/2026-11-16-mct-settings.md`); 4. rebalance (built 2026-11-16, awaiting the in-game check, findings §7.6; plan `plans/2026-11-16-rebalance.md`). Order changed (user, 2026-11-15): the rebalance (4) comes before the settings window (2), so the window starts from the new defaults. Release prep 1.1.0 (2026-11-16): the TEMP 1.1.0 logs are out of the screen script (filter steps / filter check, tab counts vs rows, tab position), `script/enable_console_logging` removed — delete it from the .pack too.
 
 **Released 2026-11-02: MVP 1.0.0** (user: the flow is good; logs of two MP campaigns clean: no script errors, trade ops identical on both clients). The temporary logs (M2 / M3, HUD check, partner money, attitudes, the dry-run / direct debug switches), the debug file and `script/enable_console_logging` are out of the pack.
 
